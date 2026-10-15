@@ -1,0 +1,42 @@
+# Java / Maven
+target/
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+
+# Spring Boot y secretos
+.env
+.env.*
+!.env.example
+application-local.properties
+logs/
+*.log
+
+# IDE y sistema
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
+
+# Python / OCR
+**/venv/
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.ipynb_checkpoints/
+
+# Entrada y salidas locales del OCR
+ocr-service/imagenes/*
+ocr-service/Candidatos_FastALPR/*
+ocr-service/Historiales/*
+!ocr-service/imagenes/.gitkeep
+!ocr-service/Candidatos_FastALPR/.gitkeep
+!ocr-service/Historiales/.gitkeep

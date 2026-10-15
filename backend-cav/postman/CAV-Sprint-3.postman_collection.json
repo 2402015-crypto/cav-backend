@@ -1,0 +1,58 @@
+{
+  "info": {
+    "name": "CAV - Sprint 3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "usuarioId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"admin\",\n  \"contrasena\": \"password\"\n}" },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/auth/logout"
+      }
+    },
+    {
+      "name": "Listar usuarios ADMIN",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/usuarios"
+      }
+    },
+    {
+      "name": "Crear usuario",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"Guardia operativo\",\n  \"usuario\": \"guardia1\",\n  \"contrasena\": \"Password123!\",\n  \"rol\": \"OPERATIVO\"\n}" },
+        "url": "{{baseUrl}}/api/usuarios"
+      }
+    },
+    {
+      "name": "Desactivar usuario",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/usuarios/{{usuarioId}}/desactivar"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+HELP.md
+target/
+.env
+.env.*
+!.env.example
+logs/
+*.log
+/.idea/
+/.vscode/
+ocr-service/venv/
+ocr-service/.venv/
+ocr-service/__pycache__/
+ocr-service/**/*.py[cod]
+ocr-service/.pytest_cache/
+ocr-service/.mypy_cache/
+ocr-service/.ruff_cache/
+ocr-service/imagenes/*
+ocr-service/Candidatos_FastALPR/*
+ocr-service/Historiales/*
+!ocr-service/imagenes/.gitkeep
+!ocr-service/Candidatos_FastALPR/.gitkeep
+!ocr-service/Historiales/.gitkeep
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

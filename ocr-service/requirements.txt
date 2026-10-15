@@ -1,0 +1,3 @@
+# Dependencias del servicio OCR
+fast-alpr[onnxruntime]
+opencv-python
