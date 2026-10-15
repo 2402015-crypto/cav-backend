@@ -87,17 +87,6 @@ Configura las variables de [backend-cav/.env.example](backend-cav/.env.example) 
 | `OCR_BASE_URL` | URL del servicio OCR |
 | `OCR_CONNECT_TIMEOUT_MS` / `OCR_READ_TIMEOUT_MS` | Tiempos de espera OCR |
 
-Nunca subas `.env`, contrasenas, claves JWT, imagenes de visitantes ni reportes con datos reales.
-
-## Buenas practicas
-
-- Usar el Maven Wrapper para builds reproducibles.
-- Ejecutar pruebas antes de cada pull request.
-- Versionar migraciones Flyway, no dumps de bases de datos.
-- Mantener secretos en variables de entorno o en un gestor de secretos.
-- No subir `target`, entornos virtuales, caches, logs ni salidas OCR.
-- Revisar `git status` y `git diff` antes de cada commit.
-
 ## Autor
 
 Bryan Martinez Jimenez  
