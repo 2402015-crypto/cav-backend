@@ -85,6 +85,11 @@ public class UsuarioService {
         usuario.setEstado(EstadoUsuario.ACTIVO);
     }
 
+    @Transactional
+    public void eliminar(Integer id) {
+        usuarioRepository.delete(buscar(id));
+    }
+
     private Usuario buscar(Integer id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));

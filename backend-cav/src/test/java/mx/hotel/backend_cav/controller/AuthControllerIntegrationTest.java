@@ -1,6 +1,7 @@
 package mx.hotel.backend_cav.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -92,6 +93,33 @@ class AuthControllerIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }
+
+            @Test
+            void eliminaUsuarioConTokenDeAdmin() throws Exception {
+            Usuario usuario = new Usuario();
+            usuario.setNombreCompleto("Usuario para eliminar");
+            usuario.setUsuario("eliminar");
+            usuario.setContrasena(passwordEncoder.encode("Password123!"));
+            usuario.setEstado(EstadoUsuario.ACTIVO);
+            usuario.setRol(rolRepository.findByNombre("ADMIN").orElseThrow());
+            usuario = usuarioRepository.save(usuario);
+
+            String respuestaLogin = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"usuario\":\"admin\",\"contrasena\":\"Password123!\"}"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+            String token = JsonPath.read(respuestaLogin, "$.data.token");
+
+            mockMvc.perform(delete("/api/usuarios/{id}", usuario.getId())
+                    .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Usuario eliminado"));
+
+            org.assertj.core.api.Assertions.assertThat(usuarioRepository.findById(usuario.getId())).isEmpty();
+            }
 
             @Test
             void activaUsuarioInactivo() throws Exception {

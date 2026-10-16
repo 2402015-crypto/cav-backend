@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import jakarta.validation.Valid;
 import mx.hotel.backend_cav.dto.ApiResponse;
@@ -62,5 +63,11 @@ public class UsuarioController {
     public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Integer id) {
         usuarioService.activar(id);
         return ResponseEntity.ok(ApiResponse.ok("Usuario activado", null));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Integer id) {
+        usuarioService.eliminar(id);
+        return ResponseEntity.ok(ApiResponse.ok("Usuario eliminado", null));
     }
 }
