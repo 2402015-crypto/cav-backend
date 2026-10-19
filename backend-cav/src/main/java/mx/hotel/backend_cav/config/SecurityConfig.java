@@ -35,6 +35,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/status").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers(HttpMethod.GET,
+                        "/api/catalogos/**", "/api/empresas/**", "/api/transportadoras/**")
+                        .hasAnyRole("ADMIN", "OPERATIVO")
+                    .requestMatchers(HttpMethod.POST,
+                        "/api/catalogos/**", "/api/empresas/**", "/api/transportadoras/**")
+                        .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PUT,
+                        "/api/catalogos/**", "/api/empresas/**", "/api/transportadoras/**")
+                        .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.DELETE,
+                        "/api/catalogos/**", "/api/empresas/**", "/api/transportadoras/**")
+                        .hasRole("ADMIN")
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/operativo/**").hasAnyRole("ADMIN", "OPERATIVO")

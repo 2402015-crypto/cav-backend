@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> integridadReferencial(DataIntegrityViolationException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("No se puede eliminar el usuario porque tiene registros asociados"));
+                .body(ApiResponse.error("No se puede eliminar el recurso porque tiene registros asociados"));
     }
 
     @ExceptionHandler(Exception.class)
