@@ -282,3 +282,78 @@ CREATE TABLE IF NOT EXISTS `vehiculo_conductor` (
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
+
+
+
+
+/*
+=========================================================
+CAMBIOS_DB.sql
+Sistema de Control de Acceso Vehicular (CAV)
+=========================================================
+*/
+
+
+/*
+=========================================================
+CAMBIO 1
+Renombrar placa_detectada en registros_acceso
+=========================================================
+
+*/
+
+ALTER TABLE registros_acceso
+CHANGE COLUMN placa_detectada placa_registrada VARCHAR(30);
+
+
+/*
+=========================================================
+CAMBIO 2
+Eliminar nombre_huesped
+=========================================================
+*/
+
+ALTER TABLE datos_visitante
+DROP COLUMN nombre_huesped;
+
+
+/*
+=========================================================
+CAMBIO 3
+Eliminar observaciones duplicadas en datos_visitante
+=========================================================
+*/
+
+ALTER TABLE datos_visitante
+DROP COLUMN observaciones;
+
+
+/*
+=========================================================
+CAMBIO 4
+Eliminar tabla vehiculo_conductor
+=========================================================
+*/
+
+DROP TABLE vehiculo_conductor;
+
+
+/*
+=========================================================
+CAMBIO 5
+Eliminar observaciones de empresas
+=========================================================
+*/
+
+ALTER TABLE empresas
+DROP COLUMN observaciones;
+
+/*
+=========================================================
+CAMBIO 6
+Eliminar observaciones de transportadoras
+=========================================================
+*/
+
+ALTER TABLE transportadoras
+DROP COLUMN observaciones;
