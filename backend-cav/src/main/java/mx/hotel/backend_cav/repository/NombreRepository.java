@@ -14,6 +14,8 @@ public interface NombreRepository<T extends Nombrable> extends JpaRepository<T, 
 
     List<T> findByNombreContainingIgnoreCaseOrderByNombreAsc(String nombre);
 
+    java.util.Optional<T> findByNombreIgnoreCase(String nombre);
+
     boolean existsByNombreIgnoreCase(String nombre);
 
     boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Integer id);
