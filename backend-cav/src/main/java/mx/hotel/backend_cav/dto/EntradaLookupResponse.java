@@ -7,6 +7,7 @@ public record EntradaLookupResponse(
         String placa,
         String nombreCompleto,
         String area,
+        String empresa,
         String marca,
         String color,
         LocalDateTime fechaUltimoRegistro) {

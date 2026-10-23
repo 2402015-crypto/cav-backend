@@ -74,6 +74,7 @@ public class RegistroAcceso {
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
     public void setVehiculo(Vehiculo vehiculo) { this.vehiculo = vehiculo; }
     public void setConductor(Conductor conductor) { this.conductor = conductor; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public void setTipoVisitante(TipoVisitante tipoVisitante) { this.tipoVisitante = tipoVisitante; }
     public void setEstatus(EstatusVisita estatus) { this.estatus = estatus; }
     public void setMetodoRegistro(MetodoRegistro metodoRegistro) { this.metodoRegistro = metodoRegistro; }
@@ -86,6 +87,8 @@ public class RegistroAcceso {
     public String getPlacaRegistrada() { return placaRegistrada; }
     public Vehiculo getVehiculo() { return vehiculo; }
     public Conductor getConductor() { return conductor; }
+    public Empresa getEmpresa() { return empresa; }
+    public TipoVisitante getTipoVisitante() { return tipoVisitante; }
     public LocalDateTime getFechaSalida() { return fechaSalida; }
     public TipoMovimiento getTipoMovimiento() { return tipoMovimiento; }
 }

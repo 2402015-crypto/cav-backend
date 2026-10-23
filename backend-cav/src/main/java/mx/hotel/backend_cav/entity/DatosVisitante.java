@@ -28,9 +28,14 @@ public class DatosVisitante {
     @Column(name = "departamento", length = 100)
     private String departamento;
 
+    @Column(name = "destino", length = 150)
+    private String destino;
+
     public void setRegistro(RegistroAcceso registro) { this.registro = registro; }
     public void setAreaDestino(String areaDestino) { this.areaDestino = areaDestino; }
     public String getAreaDestino() { return areaDestino; }
     public void setDepartamento(String departamento) { this.departamento = departamento; }
     public String getDepartamento() { return departamento; }
+    public void setDestino(String destino) { this.destino = destino; }
+    public String getDestino() { return destino; }
 }

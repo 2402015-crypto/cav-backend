@@ -15,6 +15,7 @@ import mx.hotel.backend_cav.entity.ColorVehiculo;
 import mx.hotel.backend_cav.entity.Conductor;
 import mx.hotel.backend_cav.entity.DatosVisitante;
 import mx.hotel.backend_cav.entity.EstatusVisita;
+import mx.hotel.backend_cav.entity.Empresa;
 import mx.hotel.backend_cav.entity.MarcaVehiculo;
 import mx.hotel.backend_cav.entity.MetodoRegistro;
 import mx.hotel.backend_cav.entity.RegistroAcceso;
@@ -28,6 +29,7 @@ import mx.hotel.backend_cav.repository.ColorVehiculoRepository;
 import mx.hotel.backend_cav.repository.ConductorRepository;
 import mx.hotel.backend_cav.repository.DatosVisitanteRepository;
 import mx.hotel.backend_cav.repository.EstatusVisitaRepository;
+import mx.hotel.backend_cav.repository.EmpresaRepository;
 import mx.hotel.backend_cav.repository.MarcaVehiculoRepository;
 import mx.hotel.backend_cav.repository.RegistroAccesoRepository;
 import mx.hotel.backend_cav.repository.TipoVisitanteRepository;
@@ -46,6 +48,8 @@ public class EntradaManualService {
     private final TipoVisitanteRepository tipoRepository;
     private final EstatusVisitaRepository estatusRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmpresaRepository empresaRepository;
+    private final ApplicationTimeService timeService;
 
     public EntradaManualService(
             VehiculoRepository vehiculoRepository,
@@ -56,7 +60,9 @@ public class EntradaManualService {
             DatosVisitanteRepository datosRepository,
             TipoVisitanteRepository tipoRepository,
             EstatusVisitaRepository estatusRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            EmpresaRepository empresaRepository,
+            ApplicationTimeService timeService) {
         this.vehiculoRepository = vehiculoRepository;
         this.marcaRepository = marcaRepository;
         this.colorRepository = colorRepository;
@@ -66,6 +72,8 @@ public class EntradaManualService {
         this.tipoRepository = tipoRepository;
         this.estatusRepository = estatusRepository;
         this.usuarioRepository = usuarioRepository;
+        this.empresaRepository = empresaRepository;
+        this.timeService = timeService;
     }
 
     @Transactional(readOnly = true)
@@ -73,14 +81,16 @@ public class EntradaManualService {
         String placaNormalizada = normalizar(placa, "La placa es obligatoria");
         return vehiculoRepository.findByPlacaIgnoreCase(placaNormalizada)
                 .map(vehiculo -> datosPrevios(vehiculo, placaNormalizada))
-                .orElseGet(() -> new EntradaLookupResponse(false, placaNormalizada, null, null, null, null, null));
+                .orElseGet(() -> new EntradaLookupResponse(false, placaNormalizada, null, null, null, null, null, null));
     }
 
     @Transactional
     public EntradaManualResponse registrar(EntradaManualRequest request, UserDetails userDetails) {
         String placa = normalizar(request.placa(), "La placa es obligatoria").toUpperCase(Locale.ROOT);
-        MarcaVehiculo marca = obtenerMarca(request.marca());
-        ColorVehiculo color = obtenerColor(request.color());
+        boolean proveedor = "proveedores".equalsIgnoreCase(request.tipoRegistro());
+        MarcaVehiculo marca = obtenerMarca(request.marca(), !proveedor);
+        ColorVehiculo color = obtenerColor(request.color(), !proveedor);
+        Empresa empresa = proveedor ? obtenerEmpresa(request.empresa()) : null;
         Vehiculo vehiculo = vehiculoRepository.findByPlacaIgnoreCase(placa).orElseGet(Vehiculo::new);
         vehiculo.setPlaca(placa);
         vehiculo.setMarca(marca);
@@ -99,6 +109,7 @@ public class EntradaManualService {
         registro.setUsuario(usuario);
         registro.setVehiculo(vehiculo);
         registro.setConductor(conductor);
+        registro.setEmpresa(empresa);
         registro.setTipoVisitante(resolverTipo(request.tipoRegistro()));
         registro.setEstatus(resolverEstatus());
         registro.setMetodoRegistro(MetodoRegistro.Manual);
@@ -106,7 +117,7 @@ public class EntradaManualService {
             registro.setTipoMovimiento(TipoMovimiento.IN);
         }
         registro.setPlacaRegistrada(placa);
-        registro.setFechaEntrada(LocalDateTime.now());
+        registro.setFechaEntrada(timeService.now());
         registro.setObservaciones(blankToNull(request.observaciones()));
         registro = registroRepository.save(registro);
 
@@ -114,6 +125,10 @@ public class EntradaManualService {
         datos.setRegistro(registro);
         if ("general".equalsIgnoreCase(request.tipoRegistro())) {
             datos.setDepartamento(blankToNull(request.area()));
+        } else if (proveedor) {
+            datos.setAreaDestino(blankToNull(request.destino()));
+        } else if ("taxis".equalsIgnoreCase(request.tipoRegistro())) {
+            datos.setDestino(blankToNull(request.destino()));
         } else {
             datos.setAreaDestino(blankToNull(request.area()));
         }
@@ -124,23 +139,28 @@ public class EntradaManualService {
     private EntradaLookupResponse datosPrevios(Vehiculo vehiculo, String placa) {
         return registroRepository.findTopByVehiculoPlacaIgnoreCaseOrderByFechaEntradaDesc(placa)
                 .map(registro -> {
-                    String area = datosRepository.findByRegistro_Id(registro.getId())
-                            .map(datos -> datos.getDepartamento() != null
-                                ? datos.getDepartamento()
-                                : datos.getAreaDestino())
-                            .orElse(null);
-                    return new EntradaLookupResponse(true, placa,
+                        DatosVisitante datos = datosRepository.findByRegistro_Id(registro.getId()).orElse(null);
+                        boolean proveedor = registro.getTipoVisitante() != null
+                            && registro.getTipoVisitante().getNombre().toLowerCase(Locale.ROOT).contains("proveedor");
+                        String area = datos == null ? null : proveedor ? datos.getAreaDestino()
+                            : datos.getDepartamento() != null ? datos.getDepartamento() : datos.getAreaDestino();
+                        return new EntradaLookupResponse(true, placa,
                             registro.getConductor() == null ? null : registro.getConductor().getNombre(), area,
+                            registro.getEmpresa() == null ? null : registro.getEmpresa().getNombre(),
                             vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre(),
                             vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(), registro.getFechaEntrada());
                 })
-                .orElseGet(() -> new EntradaLookupResponse(true, placa, null, null,
+                .orElseGet(() -> new EntradaLookupResponse(true, placa, null, null, null,
                         vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre(),
                         vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(), null));
     }
 
-    private MarcaVehiculo obtenerMarca(String nombre) {
-        String valor = capitalizarPrimeraLetra(normalizar(nombre, "La marca es obligatoria"));
+    private MarcaVehiculo obtenerMarca(String nombre, boolean obligatoria) {
+        if (nombre == null || nombre.isBlank()) {
+            if (obligatoria) throw new BadRequestException("La marca es obligatoria");
+            return null;
+        }
+        String valor = capitalizarPrimeraLetra(nombre.trim());
         return marcaRepository.findByNombreIgnoreCase(valor).orElseGet(() -> {
             MarcaVehiculo nueva = new MarcaVehiculo();
             nueva.setNombre(valor);
@@ -148,12 +168,25 @@ public class EntradaManualService {
         });
     }
 
-    private ColorVehiculo obtenerColor(String nombre) {
-        String valor = capitalizarPrimeraLetra(normalizar(nombre, "El color es obligatorio"));
+    private ColorVehiculo obtenerColor(String nombre, boolean obligatoria) {
+        if (nombre == null || nombre.isBlank()) {
+            if (obligatoria) throw new BadRequestException("El color es obligatorio");
+            return null;
+        }
+        String valor = capitalizarPrimeraLetra(nombre.trim());
         return colorRepository.findByNombreIgnoreCase(valor).orElseGet(() -> {
             ColorVehiculo nuevo = new ColorVehiculo();
             nuevo.setNombre(valor);
             return colorRepository.save(nuevo);
+        });
+    }
+
+    private Empresa obtenerEmpresa(String nombre) {
+        String valor = capitalizarPrimeraLetra(normalizar(nombre, "La empresa es obligatoria"));
+        return empresaRepository.findByNombreIgnoreCase(valor).orElseGet(() -> {
+            Empresa nueva = new Empresa();
+            nueva.setNombre(valor);
+            return empresaRepository.save(nueva);
         });
     }
 

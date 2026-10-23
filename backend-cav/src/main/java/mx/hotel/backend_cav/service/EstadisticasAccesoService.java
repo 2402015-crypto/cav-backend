@@ -13,14 +13,16 @@ import mx.hotel.backend_cav.repository.RegistroAccesoRepository;
 public class EstadisticasAccesoService {
 
     private final RegistroAccesoRepository registroRepository;
+    private final ApplicationTimeService timeService;
 
-    public EstadisticasAccesoService(RegistroAccesoRepository registroRepository) {
+    public EstadisticasAccesoService(RegistroAccesoRepository registroRepository, ApplicationTimeService timeService) {
         this.registroRepository = registroRepository;
+        this.timeService = timeService;
     }
 
     @Transactional(readOnly = true)
     public EstadisticasDiaResponse obtenerHoy() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = timeService.today();
         LocalDateTime inicio = hoy.atStartOfDay();
         LocalDateTime fin = hoy.plusDays(1).atStartOfDay();
         long salidas = registroRepository.countByFechaSalidaGreaterThanEqualAndFechaSalidaLessThan(inicio, fin);
