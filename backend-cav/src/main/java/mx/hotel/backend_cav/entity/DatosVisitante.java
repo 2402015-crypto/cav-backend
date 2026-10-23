@@ -31,6 +31,12 @@ public class DatosVisitante {
     @Column(name = "destino", length = 150)
     private String destino;
 
+    @Column(name = "villa_huesped", length = 50)
+    private String villaHuesped;
+
+    @Column(name = "numero_pax")
+    private Integer numeroPax;
+
     public void setRegistro(RegistroAcceso registro) { this.registro = registro; }
     public void setAreaDestino(String areaDestino) { this.areaDestino = areaDestino; }
     public String getAreaDestino() { return areaDestino; }
@@ -38,4 +44,8 @@ public class DatosVisitante {
     public String getDepartamento() { return departamento; }
     public void setDestino(String destino) { this.destino = destino; }
     public String getDestino() { return destino; }
+    public void setVillaHuesped(String villaHuesped) { this.villaHuesped = villaHuesped; }
+    public String getVillaHuesped() { return villaHuesped; }
+    public void setNumeroPax(Integer numeroPax) { this.numeroPax = numeroPax; }
+    public Integer getNumeroPax() { return numeroPax; }
 }

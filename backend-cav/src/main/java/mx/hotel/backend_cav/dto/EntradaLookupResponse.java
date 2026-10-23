@@ -8,7 +8,11 @@ public record EntradaLookupResponse(
         String nombreCompleto,
         String area,
         String empresa,
+        String transportadora,
         String marca,
         String color,
+        String tipoMovimiento,
+        String villa,
+        Integer numeroPax,
         LocalDateTime fechaUltimoRegistro) {
 }
