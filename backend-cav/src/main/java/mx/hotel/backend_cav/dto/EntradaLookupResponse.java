@@ -14,5 +14,7 @@ public record EntradaLookupResponse(
         String tipoMovimiento,
         String villa,
         Integer numeroPax,
+        String numeroUnidad,
+        String destino,
         LocalDateTime fechaUltimoRegistro) {
 }

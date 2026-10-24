@@ -86,7 +86,7 @@ public class EntradaManualService {
         String placaNormalizada = normalizar(placa, "La placa es obligatoria");
         return vehiculoRepository.findByPlacaIgnoreCase(placaNormalizada)
                 .map(vehiculo -> datosPrevios(vehiculo, placaNormalizada))
-                .orElseGet(() -> new EntradaLookupResponse(false, placaNormalizada, null, null, null, null, null, null, null, null, null, null));
+                .orElseGet(() -> new EntradaLookupResponse(false, placaNormalizada, null, null, null, null, null, null, null, null, null, null, null, null));
     }
 
     @Transactional
@@ -94,8 +94,9 @@ public class EntradaManualService {
         String placa = normalizar(request.placa(), "La placa es obligatoria").toUpperCase(Locale.ROOT);
         boolean proveedor = "proveedores".equalsIgnoreCase(request.tipoRegistro());
         boolean transportadoraRegistro = "transportadoras".equalsIgnoreCase(request.tipoRegistro());
-        MarcaVehiculo marca = obtenerMarca(request.marca(), !proveedor);
-        ColorVehiculo color = obtenerColor(request.color(), !proveedor);
+        boolean taxi = "taxis".equalsIgnoreCase(request.tipoRegistro());
+        MarcaVehiculo marca = obtenerMarca(request.marca(), !proveedor && !taxi);
+        ColorVehiculo color = obtenerColor(request.color(), !proveedor && !taxi);
         Empresa empresa = proveedor ? obtenerEmpresa(request.empresa()) : null;
         Transportadora transportadora = transportadoraRegistro ? obtenerTransportadora(request.transportadora()) : null;
         Vehiculo vehiculo = vehiculoRepository.findByPlacaIgnoreCase(placa).orElseGet(Vehiculo::new);
@@ -138,7 +139,9 @@ public class EntradaManualService {
         } else if (transportadoraRegistro) {
             datos.setVillaHuesped(blankToNull(request.villa()));
             datos.setNumeroPax(request.numeroPax());
-        } else if ("taxis".equalsIgnoreCase(request.tipoRegistro())) {
+        } else if (taxi) {
+            datos.setNumeroUnidad(blankToNull(request.numeroUnidad()));
+            datos.setVillaHuesped(blankToNull(request.villa()));
             datos.setDestino(blankToNull(request.destino()));
         } else {
             datos.setAreaDestino(blankToNull(request.area()));
@@ -155,6 +158,8 @@ public class EntradaManualService {
                             && registro.getTipoVisitante().getNombre().toLowerCase(Locale.ROOT).contains("proveedor");
                             boolean transportadora = registro.getTipoVisitante() != null
                                 && registro.getTipoVisitante().getNombre().toLowerCase(Locale.ROOT).contains("transportadora");
+                        boolean taxi = registro.getTipoVisitante() != null
+                                && registro.getTipoVisitante().getNombre().toLowerCase(Locale.ROOT).contains("taxi");
                         String area = datos == null ? null : proveedor ? datos.getAreaDestino()
                             : datos.getDepartamento() != null ? datos.getDepartamento() : datos.getAreaDestino();
                             return new EntradaLookupResponse(true, placa,
@@ -166,11 +171,13 @@ public class EntradaManualService {
                                 transportadora && registro.getTipoMovimiento() != null ? registro.getTipoMovimiento().name() : null,
                                 transportadora && datos != null ? datos.getVillaHuesped() : null,
                                 transportadora && datos != null ? datos.getNumeroPax() : null,
+                                taxi && datos != null ? datos.getNumeroUnidad() : null,
+                                taxi && datos != null ? datos.getDestino() : null,
                                 registro.getFechaEntrada());
                 })
                         .orElseGet(() -> new EntradaLookupResponse(true, placa, null, null, null, null,
                         vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre(),
-                            vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(), null, null, null, null));
+                            vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(), null, null, null, null, null, null));
     }
 
     private MarcaVehiculo obtenerMarca(String nombre, boolean obligatoria) {

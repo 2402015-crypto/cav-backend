@@ -34,6 +34,9 @@ public class DatosVisitante {
     @Column(name = "villa_huesped", length = 50)
     private String villaHuesped;
 
+    @Column(name = "numero_unidad", length = 30)
+    private String numeroUnidad;
+
     @Column(name = "numero_pax")
     private Integer numeroPax;
 
@@ -48,4 +51,6 @@ public class DatosVisitante {
     public String getVillaHuesped() { return villaHuesped; }
     public void setNumeroPax(Integer numeroPax) { this.numeroPax = numeroPax; }
     public Integer getNumeroPax() { return numeroPax; }
+    public void setNumeroUnidad(String numeroUnidad) { this.numeroUnidad = numeroUnidad; }
+    public String getNumeroUnidad() { return numeroUnidad; }
 }

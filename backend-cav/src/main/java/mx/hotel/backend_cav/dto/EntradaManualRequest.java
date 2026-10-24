@@ -18,6 +18,7 @@ public record EntradaManualRequest(
         @Size(max = 3, message = "El tipo de movimiento no es válido") String tipoMovimiento,
         @Size(max = 50, message = "La villa no puede exceder 50 caracteres") String villa,
         @jakarta.validation.constraints.Min(value = 0, message = "El número de pasajeros no puede ser negativo") Integer numeroPax,
+        @Size(max = 30, message = "El número de unidad no puede exceder 30 caracteres") String numeroUnidad,
         @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres") String observaciones,
         LocalDateTime fechaEntrada) {
 }
