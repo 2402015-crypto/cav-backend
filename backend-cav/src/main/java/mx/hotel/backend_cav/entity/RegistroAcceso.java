@@ -93,4 +93,6 @@ public class RegistroAcceso {
     public TipoVisitante getTipoVisitante() { return tipoVisitante; }
     public LocalDateTime getFechaSalida() { return fechaSalida; }
     public TipoMovimiento getTipoMovimiento() { return tipoMovimiento; }
+    public String getObservaciones() { return observaciones; }
+    public void setFechaSalida(LocalDateTime fechaSalida) { this.fechaSalida = fechaSalida; }
 }
