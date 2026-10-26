@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import mx.hotel.backend_cav.dto.ApiResponse;
 import mx.hotel.backend_cav.dto.SalidaLookupResponse;
 import mx.hotel.backend_cav.dto.SalidaRequest;
+import mx.hotel.backend_cav.dto.SalidaActivaResponse;
+import mx.hotel.backend_cav.dto.SalidaDetalleResponse;
 import mx.hotel.backend_cav.service.SalidaService;
 
 @RestController
@@ -31,6 +33,18 @@ public class SalidaController {
     @GetMapping("/buscar")
     public ResponseEntity<ApiResponse<SalidaLookupResponse>> buscar(@RequestParam String placa) {
         return ResponseEntity.ok(ApiResponse.ok("Vehículo activo encontrado", service.buscar(placa)));
+    }
+
+    /** Lista vehículos con entrada activa, filtrando opcionalmente por placa o conductor. */
+    @GetMapping("/activos")
+    public ResponseEntity<ApiResponse<java.util.List<SalidaActivaResponse>>> activos(@RequestParam(required = false) String q) {
+        return ResponseEntity.ok(ApiResponse.ok("Vehículos activos consultados", service.listarActivos(q)));
+    }
+
+    /** Obtiene el detalle e historial de visitas de un vehículo. */
+    @GetMapping("/activos/{id}")
+    public ResponseEntity<ApiResponse<SalidaDetalleResponse>> detalle(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok("Detalle de vehículo consultado", service.detalle(id)));
     }
 
     /** Registra la salida y actualiza las observaciones del vehículo. */

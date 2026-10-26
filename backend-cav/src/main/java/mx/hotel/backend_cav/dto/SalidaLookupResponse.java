@@ -15,5 +15,10 @@ public record SalidaLookupResponse(
         LocalDateTime fechaSalida,
         String observaciones,
         long permanenciaMinutos,
-        String permanencia) {
+        String permanencia,
+        String area,
+        String villa,
+        Integer numeroPax,
+        String numeroUnidad,
+        String destino) {
 }
