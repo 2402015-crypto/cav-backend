@@ -53,4 +53,11 @@ public class SalidaController {
             @PathVariable Integer id, @Valid @RequestBody SalidaRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Salida registrada", service.registrar(id, request)));
     }
+
+    /** Actualiza únicamente las observaciones sin registrar la salida. */
+    @org.springframework.web.bind.annotation.PatchMapping("/{id}/observaciones")
+    public ResponseEntity<ApiResponse<SalidaLookupResponse>> actualizarObservaciones(
+            @PathVariable Integer id, @Valid @RequestBody SalidaRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Observaciones actualizadas", service.actualizarObservaciones(id, request)));
+    }
 }

@@ -74,6 +74,15 @@ public class SalidaService {
         return mapear(registroRepository.save(registro));
     }
 
+    @Transactional
+    public SalidaLookupResponse actualizarObservaciones(Integer id, SalidaRequest request) {
+        RegistroAcceso registro = registroRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Registro de entrada no encontrado"));
+        registro.setObservaciones(request == null || request.observaciones() == null
+                ? null : request.observaciones().trim());
+        return mapear(registroRepository.save(registro));
+    }
+
     private SalidaLookupResponse mapear(RegistroAcceso registro) {
         long minutos = Math.max(0, Duration.between(registro.getFechaEntrada(),
                 registro.getFechaSalida() == null ? timeService.now() : registro.getFechaSalida()).toMinutes());
@@ -88,6 +97,7 @@ public class SalidaService {
                 registro.getTransportadora() == null ? null : registro.getTransportadora().getNombre(),
                 registro.getVehiculo() == null || registro.getVehiculo().getMarca() == null ? null : registro.getVehiculo().getMarca().getNombre(),
                 registro.getVehiculo() == null || registro.getVehiculo().getColor() == null ? null : registro.getVehiculo().getColor().getNombre(),
+                registro.getTipoMovimiento() == null ? null : registro.getTipoMovimiento().name(),
                 registro.getFechaEntrada(), registro.getFechaSalida(), registro.getObservaciones(), minutos, formatear(minutos),
                 area, datos == null ? null : datos.getVillaHuesped(), datos == null ? null : datos.getNumeroPax(),
                 datos == null ? null : datos.getNumeroUnidad(), datos == null ? null : datos.getDestino());

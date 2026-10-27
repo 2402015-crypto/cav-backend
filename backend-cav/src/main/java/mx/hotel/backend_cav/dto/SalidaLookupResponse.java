@@ -11,6 +11,7 @@ public record SalidaLookupResponse(
         String transportadora,
         String marca,
         String color,
+        String tipoMovimiento,
         LocalDateTime fechaEntrada,
         LocalDateTime fechaSalida,
         String observaciones,
