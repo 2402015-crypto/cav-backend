@@ -88,3 +88,13 @@ python detector.py
 ```
 
 El script genera resultados en `Candidatos_FastALPR/` e `Historiales/`; ambas carpetas estan excluidas de Git. El endpoint OCR configurado en `OCR_BASE_URL` debe corresponder al servicio que consuma el backend.
+
+Para levantar el servicio OCR HTTP usado por el backend:
+
+```powershell
+Set-Location ..\ocr-service
+\.venv\Scripts\Activate.ps1
+uvicorn app:app --host 0.0.0.0 --port 5000
+```
+
+El endpoint de salud es `http://localhost:5000/health` y el backend consume `POST /v1/ocr/recognize`.

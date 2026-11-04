@@ -20,5 +20,6 @@ public record EntradaManualRequest(
         @jakarta.validation.constraints.Min(value = 0, message = "El número de pasajeros no puede ser negativo") Integer numeroPax,
         @Size(max = 30, message = "El número de unidad no puede exceder 30 caracteres") String numeroUnidad,
         @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres") String observaciones,
-        LocalDateTime fechaEntrada) {
+                LocalDateTime fechaEntrada,
+                Integer idOcr) {
 }

@@ -1,3 +1,7 @@
 # Dependencias del servicio OCR
 fast-alpr[onnxruntime]
+onnxruntime
 opencv-python
+fastapi
+uvicorn[standard]
+python-multipart

@@ -18,6 +18,7 @@ import mx.hotel.backend_cav.entity.EstatusVisita;
 import mx.hotel.backend_cav.entity.Empresa;
 import mx.hotel.backend_cav.entity.MarcaVehiculo;
 import mx.hotel.backend_cav.entity.MetodoRegistro;
+import mx.hotel.backend_cav.entity.OcrHistorial;
 import mx.hotel.backend_cav.entity.RegistroAcceso;
 import mx.hotel.backend_cav.entity.TipoVisitante;
 import mx.hotel.backend_cav.entity.TipoMovimiento;
@@ -25,6 +26,7 @@ import mx.hotel.backend_cav.entity.Usuario;
 import mx.hotel.backend_cav.entity.Vehiculo;
 import mx.hotel.backend_cav.entity.Transportadora;
 import mx.hotel.backend_cav.exception.BadRequestException;
+import mx.hotel.backend_cav.exception.ConflictException;
 import mx.hotel.backend_cav.exception.ResourceNotFoundException;
 import mx.hotel.backend_cav.repository.ColorVehiculoRepository;
 import mx.hotel.backend_cav.repository.ConductorRepository;
@@ -32,6 +34,7 @@ import mx.hotel.backend_cav.repository.DatosVisitanteRepository;
 import mx.hotel.backend_cav.repository.EstatusVisitaRepository;
 import mx.hotel.backend_cav.repository.EmpresaRepository;
 import mx.hotel.backend_cav.repository.MarcaVehiculoRepository;
+import mx.hotel.backend_cav.repository.OcrHistorialRepository;
 import mx.hotel.backend_cav.repository.RegistroAccesoRepository;
 import mx.hotel.backend_cav.repository.TipoVisitanteRepository;
 import mx.hotel.backend_cav.repository.TransportadoraRepository;
@@ -53,6 +56,7 @@ public class EntradaManualService {
     private final EmpresaRepository empresaRepository;
     private final ApplicationTimeService timeService;
     private final TransportadoraRepository transportadoraRepository;
+    private final OcrHistorialRepository ocrRepository;
 
     public EntradaManualService(
             VehiculoRepository vehiculoRepository,
@@ -66,7 +70,8 @@ public class EntradaManualService {
             UsuarioRepository usuarioRepository,
             EmpresaRepository empresaRepository,
             ApplicationTimeService timeService,
-            TransportadoraRepository transportadoraRepository) {
+            TransportadoraRepository transportadoraRepository,
+            OcrHistorialRepository ocrRepository) {
         this.vehiculoRepository = vehiculoRepository;
         this.marcaRepository = marcaRepository;
         this.colorRepository = colorRepository;
@@ -79,6 +84,7 @@ public class EntradaManualService {
         this.empresaRepository = empresaRepository;
         this.timeService = timeService;
         this.transportadoraRepository = transportadoraRepository;
+        this.ocrRepository = ocrRepository;
     }
 
     @Transactional(readOnly = true)
@@ -92,6 +98,10 @@ public class EntradaManualService {
     @Transactional
     public EntradaManualResponse registrar(EntradaManualRequest request, UserDetails userDetails) {
         String placa = normalizar(request.placa(), "La placa es obligatoria").toUpperCase(Locale.ROOT);
+        registroRepository.findTopByPlacaRegistradaIgnoreCaseAndFechaSalidaIsNullOrderByFechaEntradaDesc(placa)
+                .ifPresent(registro -> {
+                    throw new ConflictException("El vehículo ya tiene un registro previo activo");
+                });
         boolean proveedor = "proveedores".equalsIgnoreCase(request.tipoRegistro());
         boolean transportadoraRegistro = "transportadoras".equalsIgnoreCase(request.tipoRegistro());
         boolean taxi = "taxis".equalsIgnoreCase(request.tipoRegistro());
@@ -128,10 +138,16 @@ public class EntradaManualService {
         registro.setPlacaRegistrada(placa);
         registro.setFechaEntrada(request.fechaEntrada() != null ? request.fechaEntrada() : timeService.now());
         registro.setObservaciones(blankToNull(request.observaciones()));
-        registro = registroRepository.save(registro);
+        RegistroAcceso registroGuardado = registroRepository.save(registro);
+        if (request.idOcr() != null) {
+            ocrRepository.findById(request.idOcr()).ifPresent(ocr -> {
+                ocr.vincularRegistro(registroGuardado);
+                ocrRepository.save(ocr);
+            });
+        }
 
         DatosVisitante datos = new DatosVisitante();
-        datos.setRegistro(registro);
+        datos.setRegistro(registroGuardado);
         if ("general".equalsIgnoreCase(request.tipoRegistro())) {
             datos.setDepartamento(blankToNull(request.area()));
         } else if (proveedor) {
@@ -147,7 +163,7 @@ public class EntradaManualService {
             datos.setAreaDestino(blankToNull(request.area()));
         }
         datosRepository.save(datos);
-        return new EntradaManualResponse(registro.getId(), placa, registro.getFechaEntrada());
+        return new EntradaManualResponse(registroGuardado.getId(), placa, registroGuardado.getFechaEntrada());
     }
 
     private EntradaLookupResponse datosPrevios(Vehiculo vehiculo, String placa) {
