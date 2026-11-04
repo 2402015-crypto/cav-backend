@@ -1,6 +1,5 @@
 package mx.hotel.backend_cav.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -18,7 +17,6 @@ import mx.hotel.backend_cav.entity.EstatusVisita;
 import mx.hotel.backend_cav.entity.Empresa;
 import mx.hotel.backend_cav.entity.MarcaVehiculo;
 import mx.hotel.backend_cav.entity.MetodoRegistro;
-import mx.hotel.backend_cav.entity.OcrHistorial;
 import mx.hotel.backend_cav.entity.RegistroAcceso;
 import mx.hotel.backend_cav.entity.TipoVisitante;
 import mx.hotel.backend_cav.entity.TipoMovimiento;
@@ -259,8 +257,13 @@ public class EntradaManualService {
             case "taxis" -> List.of("Taxis", "Taxi");
             default -> throw new BadRequestException("Tipo de registro inválido");
         };
-        return nombres.stream().map(tipoRepository::findByNombreIgnoreCase).flatMap(java.util.Optional::stream).findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("El tipo de visitante no está configurado"));
+        for (String nombre : nombres) {
+            var tipo = tipoRepository.findByNombreIgnoreCase(nombre);
+            if (tipo.isPresent()) {
+                return tipo.get();
+            }
+        }
+        throw new ResourceNotFoundException("El tipo de visitante no está configurado");
     }
 
     private EstatusVisita resolverEstatus() {

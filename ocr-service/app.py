@@ -6,7 +6,7 @@ from pathlib import Path
 
 import cv2
 from fast_alpr import ALPR
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, Request
 
 app = FastAPI(title="CAV OCR Service", version="1.0.0")
 alpr = ALPR()
@@ -25,10 +25,13 @@ def health() -> dict[str, str]:
 
 
 @app.post("/v1/ocr/recognize")
-async def recognize(image: UploadFile = File(...)) -> dict:
+async def recognize(request: Request) -> dict:
     started = time.perf_counter()
-    suffix = Path(image.filename or "capture.jpg").suffix or ".jpg"
-    contents = await image.read()
+    content_type = request.headers.get("content-type", "image/jpeg").split(";", 1)[0].strip().lower()
+    suffix = ".png" if content_type == "image/png" else ".jpg"
+    contents = await request.body()
+    if not contents:
+        return {"detectada": False, "mensaje": "La imagen de la placa está vacía."}
     temporary_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temporary:
