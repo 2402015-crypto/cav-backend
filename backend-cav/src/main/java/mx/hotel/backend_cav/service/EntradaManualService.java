@@ -129,7 +129,7 @@ public class EntradaManualService {
         registro.setTransportadora(transportadora);
         registro.setTipoVisitante(resolverTipo(request.tipoRegistro()));
         registro.setEstatus(resolverEstatus());
-        registro.setMetodoRegistro(request.idOcr() == null ? MetodoRegistro.Manual : MetodoRegistro.Automatico);
+        registro.setMetodoRegistro(resolverMetodoRegistro(request));
         if (transportadoraRegistro) {
             registro.setTipoMovimiento(resolverMovimiento(request.tipoMovimiento()));
         }
@@ -197,6 +197,17 @@ public class EntradaManualService {
 
     private String valorOpcional(String valor) {
         return valor == null || valor.isBlank() ? "N/A" : valor;
+    }
+
+    private MetodoRegistro resolverMetodoRegistro(EntradaManualRequest request) {
+        if (request.metodoRegistro() != null && !request.metodoRegistro().isBlank()) {
+            try {
+                return MetodoRegistro.valueOf(request.metodoRegistro().trim());
+            } catch (IllegalArgumentException exception) {
+                throw new BadRequestException("El método de registro no es válido");
+            }
+        }
+        return request.idOcr() == null ? MetodoRegistro.Manual : MetodoRegistro.Automatico;
     }
 
     private MarcaVehiculo obtenerMarca(String nombre, boolean obligatoria) {

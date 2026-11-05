@@ -21,5 +21,6 @@ public record EntradaManualRequest(
         @Size(max = 30, message = "El número de unidad no puede exceder 30 caracteres") String numeroUnidad,
         @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres") String observaciones,
                 LocalDateTime fechaEntrada,
-                Integer idOcr) {
+        Integer idOcr,
+        @Size(max = 20, message = "El método de registro no es válido") String metodoRegistro) {
 }
