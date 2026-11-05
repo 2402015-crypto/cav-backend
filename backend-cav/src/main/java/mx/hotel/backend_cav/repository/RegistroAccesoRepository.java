@@ -12,6 +12,8 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 
 	java.util.Optional<RegistroAcceso> findTopByVehiculoPlacaIgnoreCaseOrderByFechaEntradaDesc(String placa);
 
+	java.util.Optional<RegistroAcceso> findTopByPlacaRegistradaIgnoreCaseOrderByFechaEntradaDesc(String placa);
+
 	java.util.Optional<RegistroAcceso> findTopByPlacaRegistradaIgnoreCaseAndFechaSalidaIsNullOrderByFechaEntradaDesc(String placa);
 
 	java.util.List<RegistroAcceso> findAllByFechaSalidaIsNullOrderByFechaEntradaAsc();

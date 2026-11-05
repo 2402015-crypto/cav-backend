@@ -103,8 +103,8 @@ public class EntradaManualService {
         boolean proveedor = "proveedores".equalsIgnoreCase(request.tipoRegistro());
         boolean transportadoraRegistro = "transportadoras".equalsIgnoreCase(request.tipoRegistro());
         boolean taxi = "taxis".equalsIgnoreCase(request.tipoRegistro());
-        MarcaVehiculo marca = obtenerMarca(request.marca(), !proveedor && !taxi);
-        ColorVehiculo color = obtenerColor(request.color(), !proveedor && !taxi);
+        MarcaVehiculo marca = obtenerMarca(request.marca(), !proveedor && !transportadoraRegistro && !taxi);
+        ColorVehiculo color = obtenerColor(request.color(), !proveedor && !transportadoraRegistro && !taxi);
         Empresa empresa = proveedor ? obtenerEmpresa(request.empresa()) : null;
         Transportadora transportadora = transportadoraRegistro ? obtenerTransportadora(request.transportadora()) : null;
         Vehiculo vehiculo = vehiculoRepository.findByPlacaIgnoreCase(placa).orElseGet(Vehiculo::new);
@@ -129,7 +129,7 @@ public class EntradaManualService {
         registro.setTransportadora(transportadora);
         registro.setTipoVisitante(resolverTipo(request.tipoRegistro()));
         registro.setEstatus(resolverEstatus());
-        registro.setMetodoRegistro(MetodoRegistro.Manual);
+        registro.setMetodoRegistro(request.idOcr() == null ? MetodoRegistro.Manual : MetodoRegistro.Automatico);
         if (transportadoraRegistro) {
             registro.setTipoMovimiento(resolverMovimiento(request.tipoMovimiento()));
         }
@@ -165,7 +165,8 @@ public class EntradaManualService {
     }
 
     private EntradaLookupResponse datosPrevios(Vehiculo vehiculo, String placa) {
-        return registroRepository.findTopByVehiculoPlacaIgnoreCaseOrderByFechaEntradaDesc(placa)
+        return registroRepository.findTopByPlacaRegistradaIgnoreCaseOrderByFechaEntradaDesc(placa)
+                .or(() -> registroRepository.findTopByVehiculoPlacaIgnoreCaseOrderByFechaEntradaDesc(placa))
                 .map(registro -> {
                         DatosVisitante datos = datosRepository.findByRegistro_Id(registro.getId()).orElse(null);
                             boolean proveedor = registro.getTipoVisitante() != null
@@ -180,8 +181,8 @@ public class EntradaManualService {
                             registro.getConductor() == null ? null : registro.getConductor().getNombre(), area,
                             registro.getEmpresa() == null ? null : registro.getEmpresa().getNombre(),
                                 registro.getTransportadora() == null ? null : registro.getTransportadora().getNombre(),
-                            vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre(),
-                                vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(),
+                            valorOpcional(vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre()),
+                                valorOpcional(vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre()),
                                 transportadora && registro.getTipoMovimiento() != null ? registro.getTipoMovimiento().name() : null,
                                 transportadora && datos != null ? datos.getVillaHuesped() : null,
                                 transportadora && datos != null ? datos.getNumeroPax() : null,
@@ -190,14 +191,18 @@ public class EntradaManualService {
                                 registro.getFechaEntrada());
                 })
                         .orElseGet(() -> new EntradaLookupResponse(true, placa, null, null, null, null,
-                        vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre(),
-                            vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre(), null, null, null, null, null, null));
+                        valorOpcional(vehiculo.getMarca() == null ? null : vehiculo.getMarca().getNombre()),
+                            valorOpcional(vehiculo.getColor() == null ? null : vehiculo.getColor().getNombre()), null, null, null, null, null, null));
+    }
+
+    private String valorOpcional(String valor) {
+        return valor == null || valor.isBlank() ? "N/A" : valor;
     }
 
     private MarcaVehiculo obtenerMarca(String nombre, boolean obligatoria) {
         if (nombre == null || nombre.isBlank()) {
             if (obligatoria) throw new BadRequestException("La marca es obligatoria");
-            return null;
+            nombre = "N/A";
         }
         String valor = capitalizarPrimeraLetra(nombre.trim());
         return marcaRepository.findByNombreIgnoreCase(valor).orElseGet(() -> {
@@ -210,7 +215,7 @@ public class EntradaManualService {
     private ColorVehiculo obtenerColor(String nombre, boolean obligatoria) {
         if (nombre == null || nombre.isBlank()) {
             if (obligatoria) throw new BadRequestException("El color es obligatorio");
-            return null;
+            nombre = "N/A";
         }
         String valor = capitalizarPrimeraLetra(nombre.trim());
         return colorRepository.findByNombreIgnoreCase(valor).orElseGet(() -> {
