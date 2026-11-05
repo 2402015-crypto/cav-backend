@@ -16,6 +16,7 @@ import mx.hotel.backend_cav.exception.ConflictException;
 import mx.hotel.backend_cav.exception.ResourceNotFoundException;
 import mx.hotel.backend_cav.repository.RegistroAccesoRepository;
 import mx.hotel.backend_cav.repository.DatosVisitanteRepository;
+import mx.hotel.backend_cav.repository.OcrHistorialRepository;
 
 @Service
 public class SalidaService {
@@ -23,11 +24,13 @@ public class SalidaService {
     private final RegistroAccesoRepository registroRepository;
     private final ApplicationTimeService timeService;
         private final DatosVisitanteRepository datosRepository;
+        private final OcrHistorialRepository ocrRepository;
 
-        public SalidaService(RegistroAccesoRepository registroRepository, ApplicationTimeService timeService, DatosVisitanteRepository datosRepository) {
+        public SalidaService(RegistroAccesoRepository registroRepository, ApplicationTimeService timeService, DatosVisitanteRepository datosRepository, OcrHistorialRepository ocrRepository) {
         this.registroRepository = registroRepository;
         this.timeService = timeService;
         this.datosRepository = datosRepository;
+        this.ocrRepository = ocrRepository;
     }
 
         @Transactional(readOnly = true)
@@ -67,10 +70,17 @@ public class SalidaService {
         if (registro.getFechaSalida() != null) {
             throw new ConflictException("La salida de este vehículo ya fue registrada");
         }
-        registro.setFechaSalida(timeService.now());
+        registro.setFechaSalida(request != null && request.fechaSalida() != null ? request.fechaSalida() : timeService.now());
         registro.setObservaciones(request == null || request.observaciones() == null
                 ? registro.getObservaciones() : request.observaciones().trim());
-        return mapear(registroRepository.save(registro));
+        RegistroAcceso registroGuardado = registroRepository.save(registro);
+        if (request != null && request.idOcr() != null) {
+            ocrRepository.findById(request.idOcr()).ifPresent(ocr -> {
+                ocr.vincularRegistro(registroGuardado);
+                ocrRepository.save(ocr);
+            });
+        }
+        return mapear(registroGuardado);
     }
 
     @Transactional
