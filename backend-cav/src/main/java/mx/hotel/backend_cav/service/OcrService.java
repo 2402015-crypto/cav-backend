@@ -40,6 +40,7 @@ public class OcrService {
             ApplicationTimeService timeService) {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .version(HttpClient.Version.HTTP_1_1)
                 .build();
         this.objectMapper = new ObjectMapper();
         this.baseUrl = baseUrl;

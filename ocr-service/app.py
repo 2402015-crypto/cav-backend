@@ -1,4 +1,4 @@
-import os
+import logging
 import re
 import tempfile
 import time
@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 
 app = FastAPI(title="CAV OCR Service", version="1.0.0")
 alpr = ALPR()
+LOGGER = logging.getLogger(__name__)
 
 
 def normalize_plate(value: str | None) -> str | None:
@@ -32,25 +33,54 @@ async def recognize(request: Request) -> dict:
     contents = await request.body()
     if not contents:
         return {"detectada": False, "mensaje": "La imagen de la placa está vacía."}
-    temporary_path = None
+    temporary_directory = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temporary:
-            temporary.write(contents)
-            temporary_path = temporary.name
-
+        temporary_directory = tempfile.mkdtemp(prefix="cav-ocr-")
+        temporary_path = str(Path(temporary_directory) / f"capture{suffix}")
+        Path(temporary_path).write_bytes(contents)
         frame = cv2.imread(temporary_path)
         if frame is None:
             return {"detectada": False, "mensaje": "La imagen no pudo ser leída."}
 
-        results = alpr.predict(temporary_path)
-        if not results:
+        height, width = frame.shape[:2]
+        LOGGER.info("Captura OCR recibida: %sx%s, %s bytes", width, height, len(contents))
+        candidate_paths = [temporary_path]
+        upscaled = cv2.resize(frame, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        upscaled_path = str(Path(temporary_directory) / f"capture-upscaled{suffix}")
+        cv2.imwrite(upscaled_path, upscaled, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        candidate_paths.append(upscaled_path)
+
+        sharpened = cv2.detailEnhance(upscaled, sigma_s=10, sigma_r=0.15)
+        enhanced_path = str(Path(temporary_directory) / f"capture-enhanced{suffix}")
+        cv2.imwrite(enhanced_path, sharpened, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        candidate_paths.append(enhanced_path)
+
+        all_results = []
+        for candidate_path in candidate_paths:
+            all_results.extend(alpr.predict(candidate_path))
+        LOGGER.info("Resultados OCR: %s en %s variantes", len(all_results), len(candidate_paths))
+        if not all_results:
             return {
                 "detectada": False,
                 "mensaje": "No se detectó una placa en la imagen.",
                 "tiempoProcesamientoMs": round((time.perf_counter() - started) * 1000),
             }
 
-        best = results[0]
+        best = next(
+            (
+                result
+                for result in all_results
+                if normalize_plate(getattr(getattr(result, "ocr", None), "text", None))
+            ),
+            None,
+        )
+        if best is None:
+            return {
+                "detectada": False,
+                "mensaje": "La placa no pudo ser interpretada.",
+                "tiempoProcesamientoMs": round((time.perf_counter() - started) * 1000),
+            }
+
         plate = normalize_plate(getattr(getattr(best, "ocr", None), "text", None))
         if not plate:
             return {"detectada": False, "mensaje": "La placa no pudo ser interpretada."}
@@ -65,5 +95,8 @@ async def recognize(request: Request) -> dict:
             "tiempoProcesamientoMs": round((time.perf_counter() - started) * 1000),
         }
     finally:
-        if temporary_path:
-            os.unlink(temporary_path)
+        if temporary_directory:
+            temporary_path_object = Path(temporary_directory)
+            for path in temporary_path_object.iterdir():
+                path.unlink()
+            temporary_path_object.rmdir()
