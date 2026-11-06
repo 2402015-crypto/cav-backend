@@ -357,3 +357,113 @@ Eliminar observaciones de transportadoras
 
 ALTER TABLE transportadoras
 DROP COLUMN observaciones;
+
+
+----------------------------------------------------------
+----------------------------------------------------------
+
+
+/*
+=========================================================
+CAMBIOS_DB
+Sistema de Control de Acceso Vehicular (CAV)
+=========================================================
+Objetivo:
+Agregar información adicional al historial OCR para
+permitir la generación de métricas, auditoría y
+trazabilidad de correcciones manuales.
+=========================================================
+*/
+
+
+/*
+=========================================================
+CAMBIO 1
+Agregar indicador de corrección manual
+=========================================================
+Permite identificar si el resultado generado por el OCR
+fue modificado posteriormente por un usuario.
+
+Valores:
+
+0 = No fue corregido
+1 = Fue corregido manualmente
+*/
+
+ALTER TABLE ocr_historial
+ADD COLUMN corregida_manual TINYINT(1)
+NOT NULL DEFAULT 0
+AFTER resultado_final;
+/*
+=========================================================
+CAMBIO 2
+Agregar placa corregida
+=========================================================
+Permite almacenar el valor final capturado cuando el
+usuario modifica la lectura realizada por FastALPR.
+
+Ejemplo:
+
+OCR:
+ABC128D
+
+Placa corregida:
+ABC123D
+*/
+
+ALTER TABLE ocr_historial
+ADD COLUMN placa_corregida VARCHAR(30)
+NULL
+AFTER corregida_manual;
+/*
+=========================================================
+CAMBIO 3
+Agregar usuario que realizó la corrección
+=========================================================
+Permite identificar qué usuario realizó la corrección
+manual de una lectura OCR para auditoría y métricas.
+
+Relación:
+
+usuarios.id_usuario
+*/
+
+ALTER TABLE ocr_historial
+ADD COLUMN id_usuario_correccion INT NULL
+AFTER placa_corregida;
+/*
+=========================================================
+CAMBIO 4
+Crear relación con usuarios
+=========================================================
+Mantiene integridad referencial entre la corrección
+realizada y el usuario responsable.
+*/
+
+ALTER TABLE ocr_historial
+ADD CONSTRAINT fk_ocr_usuario_correccion
+FOREIGN KEY (id_usuario_correccion)
+REFERENCES usuarios(id_usuario);
+/*
+=========================================================
+RESULTADO FINAL
+=========================================================
+
+Tabla: ocr_historial
+
+Nuevos campos:
+
+corregida_manual
+placa_corregida
+id_usuario_correccion
+
+Con estos datos será posible generar métricas como:
+
+- Precisión OCR.
+- Correcciones manuales por día.
+- Correcciones por usuario.
+- Detecciones exitosas vs fallidas.
+- Usuarios con más correcciones.
+- Auditoría de modificaciones OCR.
+=========================================================
+*/
