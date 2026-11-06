@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import mx.hotel.backend_cav.dto.OcrRecognitionResponse;
 import mx.hotel.backend_cav.entity.OcrHistorial;
 import mx.hotel.backend_cav.exception.BadRequestException;
-import mx.hotel.backend_cav.repository.OcrHistorialRepository;
 
 @Service
 public class OcrService {
@@ -30,13 +29,13 @@ public class OcrService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
-    private final OcrHistorialRepository historialRepository;
+    private final OcrHistorialService historialService;
     private final ApplicationTimeService timeService;
 
     public OcrService(
             @Value("${app.ocr.base-url:http://localhost:5000}") String baseUrl,
             @Value("${app.ocr.connect-timeout-ms:2000}") long connectTimeoutMs,
-            OcrHistorialRepository historialRepository,
+            OcrHistorialService historialService,
             ApplicationTimeService timeService) {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(connectTimeoutMs))
@@ -44,7 +43,7 @@ public class OcrService {
                 .build();
         this.objectMapper = new ObjectMapper();
         this.baseUrl = baseUrl;
-        this.historialRepository = historialRepository;
+        this.historialService = historialService;
         this.timeService = timeService;
     }
 
@@ -82,7 +81,7 @@ public class OcrService {
             historial.setTiempoProcesamientoMs(remote.tiempoProcesamientoMs());
             historial.setResultadoFinal(Boolean.TRUE.equals(remote.detectada()) ? "DETECTADA" : "NO_DETECTADA");
             historial.setFecha(timeService.now());
-            historialRepository.save(historial);
+            historial = historialService.guardar(historial);
             return new OcrRecognitionResponse(historial.getId(), Boolean.TRUE.equals(remote.detectada()),
                     remote.placa(), remote.confianzaDetectada(), remote.regionDetectada(),
                     remote.tiempoProcesamientoMs(), remote.mensaje());

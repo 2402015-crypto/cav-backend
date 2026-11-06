@@ -41,10 +41,23 @@ public class OcrHistorial {
     @Column(name = "resultado_final", length = 30)
     private String resultadoFinal;
 
+    @Column(name = "corregida_manual", nullable = false)
+    private boolean corregidaManual;
+
+    @Column(name = "placa_corregida", length = 30)
+    private String placaCorregida;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_correccion")
+    private Usuario usuarioCorreccion;
+
     @Column(name = "fecha")
     private LocalDateTime fecha;
 
     public Integer getId() { return id; }
+        public String getPlacaDetectada() { return placaDetectada; }
+        public String getResultadoFinal() { return resultadoFinal; }
+        public LocalDateTime getFecha() { return fecha; }
         public void vincularRegistro(RegistroAcceso registro) { this.registro = registro; }
     public void setRegistro(RegistroAcceso registro) { this.registro = registro; }
     public void setPlacaDetectada(String placaDetectada) { this.placaDetectada = placaDetectada; }
@@ -53,4 +66,11 @@ public class OcrHistorial {
     public void setTiempoProcesamientoMs(Integer tiempoProcesamientoMs) { this.tiempoProcesamientoMs = tiempoProcesamientoMs; }
     public void setResultadoFinal(String resultadoFinal) { this.resultadoFinal = resultadoFinal; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public boolean isCorregidaManual() { return corregidaManual; }
+    public void marcarCorreccion(String placaCorregida, Usuario usuario) {
+        this.corregidaManual = true;
+        this.placaCorregida = placaCorregida;
+        this.resultadoFinal = placaCorregida;
+        this.usuarioCorreccion = usuario;
+    }
 }

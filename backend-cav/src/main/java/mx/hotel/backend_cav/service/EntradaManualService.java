@@ -55,6 +55,7 @@ public class EntradaManualService {
     private final ApplicationTimeService timeService;
     private final TransportadoraRepository transportadoraRepository;
     private final OcrHistorialRepository ocrRepository;
+    private final OcrHistorialService ocrHistorialService;
 
     public EntradaManualService(
             VehiculoRepository vehiculoRepository,
@@ -69,7 +70,8 @@ public class EntradaManualService {
             EmpresaRepository empresaRepository,
             ApplicationTimeService timeService,
             TransportadoraRepository transportadoraRepository,
-            OcrHistorialRepository ocrRepository) {
+            OcrHistorialRepository ocrRepository,
+            OcrHistorialService ocrHistorialService) {
         this.vehiculoRepository = vehiculoRepository;
         this.marcaRepository = marcaRepository;
         this.colorRepository = colorRepository;
@@ -83,6 +85,7 @@ public class EntradaManualService {
         this.timeService = timeService;
         this.transportadoraRepository = transportadoraRepository;
         this.ocrRepository = ocrRepository;
+        this.ocrHistorialService = ocrHistorialService;
     }
 
     @Transactional(readOnly = true)
@@ -142,6 +145,7 @@ public class EntradaManualService {
                 ocr.vincularRegistro(registroGuardado);
                 ocrRepository.save(ocr);
             });
+            ocrHistorialService.registrarCorreccion(request.idOcr(), placa, userDetails.getUsername());
         }
 
         DatosVisitante datos = new DatosVisitante();
