@@ -38,9 +38,13 @@ public class SalidaService {
         java.util.List<RegistroAcceso> registros = texto == null || texto.isBlank()
             ? registroRepository.findAllByFechaSalidaIsNullOrderByFechaEntradaAsc()
             : registroRepository.buscarActivos(texto.trim());
-        return registros.stream().map(registro -> new SalidaActivaResponse(registro.getId(), registro.getPlacaRegistrada(),
-            registro.getConductor() == null ? "N/A" : registro.getConductor().getNombre(), relacionado(registro),
-            registro.getTipoVisitante() == null ? "N/A" : registro.getTipoVisitante().getNombre(), registro.getFechaEntrada())).toList();
+        return registros.stream().map(registro -> {
+        long minutos = Math.max(0, Duration.between(registro.getFechaEntrada(), timeService.now()).toMinutes());
+        return new SalidaActivaResponse(registro.getId(), registro.getPlacaRegistrada(),
+                   registro.getConductor() == null ? "N/A" : registro.getConductor().getNombre(),
+                   relacionado(registro), registro.getTipoVisitante() == null ? "N/A" : registro.getTipoVisitante().getNombre(),
+                   registro.getFechaEntrada(), registro.getObservaciones(), minutos, formatear(minutos));
+        }).toList();
         }
 
         @Transactional(readOnly = true)
