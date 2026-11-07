@@ -23,6 +23,30 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 
 	java.util.List<RegistroAcceso> findAllByVehiculo_IdOrderByFechaEntradaDesc(Integer vehiculoId);
 
+	@Query("""
+		select r from RegistroAcceso r
+		left join r.conductor c
+		left join r.empresa e
+		left join r.transportadora t
+		left join r.tipoVisitante tv
+		where (:texto is null or :texto = ''
+			or lower(r.placaRegistrada) like lower(concat('%', :texto, '%'))
+			or lower(c.nombre) like lower(concat('%', :texto, '%')))
+		and (:empresa is null or :empresa = ''
+			or lower(e.nombre) like lower(concat('%', :empresa, '%'))
+			or lower(t.nombre) like lower(concat('%', :empresa, '%')))
+		and (:tipo is null or :tipo = '' or lower(tv.nombre) = lower(:tipo))
+		and (:desde is null or r.fechaEntrada >= :desde)
+		and (:hasta is null or r.fechaEntrada < :hasta)
+		order by r.fechaEntrada desc
+		""")
+	java.util.List<RegistroAcceso> buscarHistorial(
+			@Param("texto") String texto,
+			@Param("empresa") String empresa,
+			@Param("tipo") String tipo,
+			@Param("desde") java.time.LocalDateTime desde,
+			@Param("hasta") java.time.LocalDateTime hasta);
+
 	long countByFechaEntradaGreaterThanEqualAndFechaEntradaLessThan(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
 
 	    long countByFechaEntradaGreaterThanEqualAndFechaEntradaLessThanAndFechaSalidaIsNull(

@@ -1,6 +1,8 @@
 package mx.hotel.backend_cav.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import mx.hotel.backend_cav.dto.SalidaLookupResponse;
 import mx.hotel.backend_cav.dto.SalidaRequest;
 import mx.hotel.backend_cav.dto.SalidaActivaResponse;
 import mx.hotel.backend_cav.dto.SalidaDetalleResponse;
+import mx.hotel.backend_cav.dto.HistorialAccesoResponse;
 import mx.hotel.backend_cav.entity.RegistroAcceso;
 import mx.hotel.backend_cav.entity.DatosVisitante;
 import mx.hotel.backend_cav.exception.ConflictException;
@@ -46,6 +49,32 @@ public class SalidaService {
                    registro.getFechaEntrada(), registro.getObservaciones(), minutos, formatear(minutos));
         }).toList();
         }
+
+    @Transactional(readOnly = true)
+    public java.util.List<HistorialAccesoResponse> listarHistorial(
+            String texto, String empresa, LocalDate desde, LocalDate hasta, String tipo) {
+        LocalDateTime inicio = desde == null ? null : desde.atStartOfDay();
+        LocalDateTime fin = hasta == null ? null : hasta.plusDays(1).atStartOfDay();
+        return registroRepository.buscarHistorial(normalizar(texto), normalizar(empresa), normalizar(tipo), inicio, fin)
+                .stream().map(this::mapearHistorial).toList();
+    }
+
+    private HistorialAccesoResponse mapearHistorial(RegistroAcceso registro) {
+        long minutos = Math.max(0, Duration.between(registro.getFechaEntrada(),
+                registro.getFechaSalida() == null ? timeService.now() : registro.getFechaSalida()).toMinutes());
+        return new HistorialAccesoResponse(registro.getId(), registro.getPlacaRegistrada(),
+                registro.getConductor() == null ? null : registro.getConductor().getNombre(),
+                relacionado(registro),
+                registro.getTipoVisitante() == null ? null : registro.getTipoVisitante().getNombre(),
+                registro.getEmpresa() == null ? null : registro.getEmpresa().getNombre(),
+                registro.getTransportadora() == null ? null : registro.getTransportadora().getNombre(),
+                registro.getFechaEntrada(), registro.getFechaSalida(), registro.getObservaciones(),
+                minutos, formatear(minutos));
+    }
+
+    private String normalizar(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 
         @Transactional(readOnly = true)
         public SalidaDetalleResponse detalle(Integer id) {

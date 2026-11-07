@@ -16,6 +16,8 @@ import mx.hotel.backend_cav.dto.SalidaLookupResponse;
 import mx.hotel.backend_cav.dto.SalidaRequest;
 import mx.hotel.backend_cav.dto.SalidaActivaResponse;
 import mx.hotel.backend_cav.dto.SalidaDetalleResponse;
+import mx.hotel.backend_cav.dto.HistorialAccesoResponse;
+import java.time.LocalDate;
 import mx.hotel.backend_cav.service.SalidaService;
 
 @RestController
@@ -45,6 +47,18 @@ public class SalidaController {
     @GetMapping("/activos/{id}")
     public ResponseEntity<ApiResponse<SalidaDetalleResponse>> detalle(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.ok("Detalle de vehículo consultado", service.detalle(id)));
+    }
+
+    /** Lista todos los accesos, ordenados del más reciente al más antiguo. */
+    @GetMapping("/historial")
+    public ResponseEntity<ApiResponse<java.util.List<HistorialAccesoResponse>>> historial(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String empresa,
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta,
+            @RequestParam(required = false) String tipo) {
+        return ResponseEntity.ok(ApiResponse.ok("Historial de accesos consultado",
+                service.listarHistorial(q, empresa, desde, hasta, tipo)));
     }
 
     /** Registra la salida y actualiza las observaciones del vehículo. */
