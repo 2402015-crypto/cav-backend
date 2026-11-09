@@ -62,7 +62,7 @@ public class MetricasOcrService {
         MetricasOcr metricas = recalcularLectura(hoy);
         Double promedioTiempo = historialRepository.promedioTiempo(inicio, fin);
         int totalCorrecciones = metricasRepository.findAllByFechaBetweenOrderByFechaAsc(hoy.minusDays(29), hoy)
-                .stream().mapToInt(MetricasOcr::getCorreccionesManuales).sum();
+                .stream().mapToInt(metricasDia -> metricasDia.getCorreccionesManuales()).sum();
         BigDecimal promedioCorrecciones = BigDecimal.valueOf(totalCorrecciones / 30.0)
                 .setScale(2, RoundingMode.HALF_UP);
         return new DesempenoOcrResponse(metricas.getPrecisionOcr(), promedioCorrecciones,
