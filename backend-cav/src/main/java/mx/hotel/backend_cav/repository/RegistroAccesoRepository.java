@@ -62,6 +62,22 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 
 	long countByFechaSalidaGreaterThanEqualAndFechaSalidaLessThan(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
 
+	long countByFechaSalidaIsNull();
+
+	@Query("""
+		select r from RegistroAcceso r
+		left join fetch r.conductor
+		left join fetch r.empresa
+		left join fetch r.transportadora
+		left join fetch r.tipoVisitante
+		where (r.fechaEntrada >= :inicio and r.fechaEntrada < :fin)
+			or (r.fechaSalida >= :inicio and r.fechaSalida < :fin)
+		order by coalesce(r.fechaSalida, r.fechaEntrada) desc
+		""")
+	java.util.List<RegistroAcceso> buscarMovimientosDelDia(
+			@Param("inicio") java.time.LocalDateTime inicio,
+			@Param("fin") java.time.LocalDateTime fin);
+
 	@Modifying
 	@Query("update RegistroAcceso r set r.empresa = null where r.empresa.id = :empresaId")
 	int desvincularEmpresa(@Param("empresaId") Integer empresaId);

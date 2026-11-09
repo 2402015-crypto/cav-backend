@@ -54,4 +54,9 @@ public class EntradaManualController {
     public ResponseEntity<ApiResponse<EstadisticasDiaResponse>> estadisticasHoy() {
         return ResponseEntity.ok(ApiResponse.ok("Estadísticas del día consultadas", estadisticasService.obtenerHoy()));
     }
+
+    @GetMapping("/dashboard-hoy")
+    public ResponseEntity<ApiResponse<mx.hotel.backend_cav.dto.DashboardOperativoResponse>> dashboardHoy() {
+        return ResponseEntity.ok(ApiResponse.ok("Dashboard operativo consultado", estadisticasService.obtenerDashboard()));
+    }
 }
