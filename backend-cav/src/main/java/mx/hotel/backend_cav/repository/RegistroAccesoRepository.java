@@ -35,7 +35,12 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 		and (:empresa is null or :empresa = ''
 			or lower(e.nombre) like lower(concat('%', :empresa, '%'))
 			or lower(t.nombre) like lower(concat('%', :empresa, '%')))
-		and (:tipo is null or :tipo = '' or lower(tv.nombre) = lower(:tipo))
+		and (:tipo is null or :tipo = ''
+			or (lower(:tipo) = 'colaborador'
+				and (lower(tv.nombre) like '%colaborador%' or lower(tv.nombre) like '%general%'))
+			or (lower(:tipo) = 'proveedor' and lower(tv.nombre) like '%proveedor%')
+			or (lower(:tipo) = 'transportadora' and lower(tv.nombre) like '%transportadora%')
+			or (lower(:tipo) = 'taxi' and lower(tv.nombre) like '%taxi%'))
 		and (:desde is null or r.fechaEntrada >= :desde)
 		and (:hasta is null or r.fechaEntrada < :hasta)
 		order by r.fechaEntrada desc
