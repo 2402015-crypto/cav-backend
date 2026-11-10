@@ -59,7 +59,7 @@ public class EstadisticasAccesoService {
             }
         });
         eventos.sort(java.util.Comparator.comparing(MovimientoAccesoResponse::fecha).reversed());
-        List<MovimientoAccesoResponse> movimientos = eventos.stream().limit(10).toList();
+        List<MovimientoAccesoResponse> movimientos = eventos;
         return new DashboardOperativoResponse(hoy, entradas + salidas, entradas, salidas,
                 registroRepository.countByFechaSalidaIsNull(), movimientos);
     }
