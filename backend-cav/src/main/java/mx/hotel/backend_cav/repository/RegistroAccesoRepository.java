@@ -31,7 +31,9 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 		left join r.tipoVisitante tv
 		where (:texto is null or :texto = ''
 			or lower(r.placaRegistrada) like lower(concat('%', :texto, '%'))
-			or lower(c.nombre) like lower(concat('%', :texto, '%')))
+			or lower(c.nombre) like lower(concat('%', :texto, '%'))
+			or lower(e.nombre) like lower(concat('%', :texto, '%'))
+			or lower(t.nombre) like lower(concat('%', :texto, '%')))
 		and (:empresa is null or :empresa = ''
 			or lower(e.nombre) like lower(concat('%', :empresa, '%'))
 			or lower(t.nombre) like lower(concat('%', :empresa, '%')))
