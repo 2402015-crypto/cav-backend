@@ -302,6 +302,7 @@ Ejecutar después de crear la tabla auditoria en instalaciones existentes.
 */
 ALTER TABLE auditoria ADD COLUMN id_registro INT NULL;
 ALTER TABLE auditoria ADD COLUMN placa VARCHAR(30) NULL;
+ALTER TABLE auditoria ADD COLUMN observacion_snapshot TEXT NULL;
 ALTER TABLE auditoria ADD CONSTRAINT fk_auditoria_registro
     FOREIGN KEY (id_registro) REFERENCES registros_acceso(id_registro);
 CREATE INDEX idx_auditoria_placa ON auditoria(placa);

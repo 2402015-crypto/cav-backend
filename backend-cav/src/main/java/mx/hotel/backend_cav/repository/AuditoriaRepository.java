@@ -17,7 +17,10 @@ public interface AuditoriaRepository extends JpaRepository<Auditoria, Integer> {
         left join fetch a.registro r
         where (:placa is null or lower(a.placa) like lower(concat('%', :placa, '%')))
           and (:usuario is null or u.id = :usuario)
-          and (:accion is null or a.accion = :accion)
+          and (:accion is null
+            or (:accion = 'OBSERVACIONES' and a.accion in ('ANADIO_OBSERVACIONES', 'MODIFICO_OBSERVACIONES', 'ELIMINO_OBSERVACIONES'))
+            or (:accion = 'GESTION_USUARIOS' and a.accion in ('CREO_USUARIO', 'ACTIVO_USUARIO', 'DESACTIVO_USUARIO', 'ELIMINO_USUARIO', 'MODIFICO_USUARIO'))
+            or a.accion = :accion)
           and (:desde is null or a.fecha >= :desde)
           and (:hasta is null or a.fecha < :hasta)
         order by a.fecha desc

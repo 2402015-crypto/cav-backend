@@ -135,7 +135,7 @@ public class SalidaService {
         String verbo = "ELIMINO_OBSERVACIONES".equals(accion) ? "Eliminó observaciones "
                 : "ANADIO_OBSERVACIONES".equals(accion) ? "Añadió observaciones " : "Modificó observaciones ";
         auditoriaService.registrar(userDetails, accion, verbo + guardado.getPlacaRegistrada(),
-                guardado.getId(), guardado.getPlacaRegistrada());
+                guardado.getId(), guardado.getPlacaRegistrada(), guardado.getObservaciones());
         return mapear(guardado);
     }
 

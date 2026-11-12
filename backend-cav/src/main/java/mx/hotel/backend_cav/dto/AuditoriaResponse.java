@@ -9,5 +9,6 @@ public record AuditoriaResponse(
         String accion,
         String descripcion,
         String placa,
-        LocalDateTime fecha) {
+        LocalDateTime fecha,
+        String observacion) {
 }

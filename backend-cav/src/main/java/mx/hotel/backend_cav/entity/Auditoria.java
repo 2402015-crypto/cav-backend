@@ -42,6 +42,9 @@ public class Auditoria {
     @Column(name = "descripcion")
     private String descripcion;
 
+    @Column(name = "observacion_snapshot")
+    private String observacionSnapshot;
+
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
 
@@ -63,5 +66,7 @@ public class Auditoria {
     public void setAccion(String accion) { this.accion = accion; }
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public String getObservacionSnapshot() { return observacionSnapshot; }
+    public void setObservacionSnapshot(String observacionSnapshot) { this.observacionSnapshot = observacionSnapshot; }
     public LocalDateTime getFecha() { return fecha; }
 }

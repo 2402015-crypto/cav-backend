@@ -53,6 +53,12 @@ public class AuditoriaService {
     @Transactional
     public void registrar(UserDetails userDetails, String accion, String descripcion,
             Integer registroId, String placa) {
+        registrar(userDetails, accion, descripcion, registroId, placa, null);
+    }
+
+    @Transactional
+    public void registrar(UserDetails userDetails, String accion, String descripcion,
+            Integer registroId, String placa, String observacionSnapshot) {
         Usuario usuario = usuarioRepository.findByUsuarioIgnoreCase(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
         Auditoria auditoria = new Auditoria();
@@ -60,6 +66,7 @@ public class AuditoriaService {
         auditoria.setAccion(accion);
         auditoria.setDescripcion(descripcion);
         auditoria.setPlaca(placa);
+        auditoria.setObservacionSnapshot(observacionSnapshot);
         if (registroId != null) {
             RegistroAcceso registro = registroRepository.findById(registroId)
                     .orElseThrow(() -> new ResourceNotFoundException("Registro de acceso no encontrado"));
@@ -72,7 +79,8 @@ public class AuditoriaService {
         return new AuditoriaResponse(auditoria.getId(),
                 auditoria.getRegistro() == null ? null : auditoria.getRegistro().getId(),
                 auditoria.getUsuario().getUsuario(), auditoria.getAccion(),
-                auditoria.getDescripcion(), auditoria.getPlaca(), auditoria.getFecha());
+                auditoria.getDescripcion(), auditoria.getPlaca(), auditoria.getFecha(),
+                auditoria.getObservacionSnapshot());
     }
 
     private String normalizar(String value) {
