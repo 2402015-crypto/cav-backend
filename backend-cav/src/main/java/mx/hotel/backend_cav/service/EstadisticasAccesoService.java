@@ -58,7 +58,8 @@ public class EstadisticasAccesoService {
                         conductor, tipo, empresa, transportadora, registro.getFechaSalida(), true));
             }
         });
-        eventos.sort(java.util.Comparator.comparing(MovimientoAccesoResponse::fecha).reversed());
+        eventos.sort(java.util.Comparator.comparing(
+                (MovimientoAccesoResponse movimiento) -> movimiento.fecha()).reversed());
         List<MovimientoAccesoResponse> movimientos = eventos;
         return new DashboardOperativoResponse(hoy, entradas + salidas, entradas, salidas,
                 registroRepository.countByFechaSalidaIsNull(), movimientos);
