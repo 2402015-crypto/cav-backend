@@ -20,6 +20,7 @@ import mx.hotel.backend_cav.exception.ResourceNotFoundException;
 import mx.hotel.backend_cav.repository.RegistroAccesoRepository;
 import mx.hotel.backend_cav.repository.DatosVisitanteRepository;
 import mx.hotel.backend_cav.repository.OcrHistorialRepository;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Service
 public class SalidaService {
@@ -28,12 +29,14 @@ public class SalidaService {
     private final ApplicationTimeService timeService;
         private final DatosVisitanteRepository datosRepository;
         private final OcrHistorialRepository ocrRepository;
+        private final AuditoriaService auditoriaService;
 
-        public SalidaService(RegistroAccesoRepository registroRepository, ApplicationTimeService timeService, DatosVisitanteRepository datosRepository, OcrHistorialRepository ocrRepository) {
+            public SalidaService(RegistroAccesoRepository registroRepository, ApplicationTimeService timeService, DatosVisitanteRepository datosRepository, OcrHistorialRepository ocrRepository, AuditoriaService auditoriaService) {
         this.registroRepository = registroRepository;
         this.timeService = timeService;
         this.datosRepository = datosRepository;
         this.ocrRepository = ocrRepository;
+        this.auditoriaService = auditoriaService;
     }
 
         @Transactional(readOnly = true)
@@ -97,7 +100,7 @@ public class SalidaService {
     }
 
     @Transactional
-    public SalidaLookupResponse registrar(Integer id, SalidaRequest request) {
+    public SalidaLookupResponse registrar(Integer id, SalidaRequest request, UserDetails userDetails) {
         RegistroAcceso registro = registroRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de entrada no encontrado"));
         if (registro.getFechaSalida() != null) {
@@ -107,6 +110,9 @@ public class SalidaService {
         registro.setObservaciones(request == null || request.observaciones() == null
                 ? registro.getObservaciones() : request.observaciones().trim());
         RegistroAcceso registroGuardado = registroRepository.save(registro);
+        auditoriaService.registrar(userDetails, "REGISTRO_SALIDA",
+                "Registró salida " + registroGuardado.getPlacaRegistrada(),
+                registroGuardado.getId(), registroGuardado.getPlacaRegistrada());
         if (request != null && request.idOcr() != null) {
             ocrRepository.findById(request.idOcr()).ifPresent(ocr -> {
                 ocr.vincularRegistro(registroGuardado);
@@ -117,12 +123,20 @@ public class SalidaService {
     }
 
     @Transactional
-    public SalidaLookupResponse actualizarObservaciones(Integer id, SalidaRequest request) {
+    public SalidaLookupResponse actualizarObservaciones(Integer id, SalidaRequest request, UserDetails userDetails) {
         RegistroAcceso registro = registroRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de entrada no encontrado"));
+        String anterior = registro.getObservaciones();
         registro.setObservaciones(request == null || request.observaciones() == null
                 ? null : request.observaciones().trim());
-        return mapear(registroRepository.save(registro));
+        RegistroAcceso guardado = registroRepository.save(registro);
+        String accion = guardado.getObservaciones() == null ? "ELIMINO_OBSERVACIONES"
+                : anterior == null ? "ANADIO_OBSERVACIONES" : "MODIFICO_OBSERVACIONES";
+        String verbo = "ELIMINO_OBSERVACIONES".equals(accion) ? "Eliminó observaciones "
+                : "ANADIO_OBSERVACIONES".equals(accion) ? "Añadió observaciones " : "Modificó observaciones ";
+        auditoriaService.registrar(userDetails, accion, verbo + guardado.getPlacaRegistrada(),
+                guardado.getId(), guardado.getPlacaRegistrada());
+        return mapear(guardado);
     }
 
     private SalidaLookupResponse mapear(RegistroAcceso registro) {

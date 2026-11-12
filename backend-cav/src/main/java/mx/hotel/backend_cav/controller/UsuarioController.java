@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.validation.Valid;
 import mx.hotel.backend_cav.dto.ApiResponse;
@@ -42,32 +44,37 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UsuarioResponse>> crear(@Valid @RequestBody UsuarioRequest request) {
+    public ResponseEntity<ApiResponse<UsuarioResponse>> crear(@Valid @RequestBody UsuarioRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Usuario creado", usuarioService.crear(request)));
+                .body(ApiResponse.ok("Usuario creado", usuarioService.crear(request, userDetails)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UsuarioResponse>> actualizar(
-            @PathVariable Integer id, @Valid @RequestBody UsuarioRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", usuarioService.actualizar(id, request)));
+            @PathVariable Integer id, @Valid @RequestBody UsuarioRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", usuarioService.actualizar(id, request, userDetails)));
     }
 
     @PutMapping("/{id}/desactivar")
-    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Integer id) {
-        usuarioService.desactivar(id);
+    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Integer id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        usuarioService.desactivar(id, userDetails);
         return ResponseEntity.ok(ApiResponse.ok("Usuario desactivado", null));
     }
 
     @PutMapping("/{id}/activar")
-    public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Integer id) {
-        usuarioService.activar(id);
+    public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Integer id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        usuarioService.activar(id, userDetails);
         return ResponseEntity.ok(ApiResponse.ok("Usuario activado", null));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Integer id) {
-        usuarioService.eliminar(id);
+    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Integer id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        usuarioService.eliminar(id, userDetails);
         return ResponseEntity.ok(ApiResponse.ok("Usuario eliminado", null));
     }
 }

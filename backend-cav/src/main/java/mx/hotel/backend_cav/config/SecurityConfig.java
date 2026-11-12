@@ -52,6 +52,7 @@ public class SecurityConfig {
                         "/api/catalogos/**", "/api/empresas/**", "/api/transportadoras/**")
                         .hasRole("ADMIN")
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers("/api/bitacora/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/operativo/**").hasAnyRole("ADMIN", "OPERATIVO")
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

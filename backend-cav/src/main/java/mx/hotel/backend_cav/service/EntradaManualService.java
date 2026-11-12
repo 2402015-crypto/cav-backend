@@ -56,6 +56,7 @@ public class EntradaManualService {
     private final TransportadoraRepository transportadoraRepository;
     private final OcrHistorialRepository ocrRepository;
     private final OcrHistorialService ocrHistorialService;
+    private final AuditoriaService auditoriaService;
 
     public EntradaManualService(
             VehiculoRepository vehiculoRepository,
@@ -71,7 +72,8 @@ public class EntradaManualService {
             ApplicationTimeService timeService,
             TransportadoraRepository transportadoraRepository,
             OcrHistorialRepository ocrRepository,
-            OcrHistorialService ocrHistorialService) {
+            OcrHistorialService ocrHistorialService,
+            AuditoriaService auditoriaService) {
         this.vehiculoRepository = vehiculoRepository;
         this.marcaRepository = marcaRepository;
         this.colorRepository = colorRepository;
@@ -86,6 +88,7 @@ public class EntradaManualService {
         this.transportadoraRepository = transportadoraRepository;
         this.ocrRepository = ocrRepository;
         this.ocrHistorialService = ocrHistorialService;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional(readOnly = true)
@@ -165,6 +168,8 @@ public class EntradaManualService {
             datos.setAreaDestino(blankToNull(request.area()));
         }
         datosRepository.save(datos);
+        auditoriaService.registrar(userDetails, "REGISTRO_ENTRADA",
+                "Registró entrada " + placa, registroGuardado.getId(), placa);
         return new EntradaManualResponse(registroGuardado.getId(), placa, registroGuardado.getFechaEntrada());
     }
 

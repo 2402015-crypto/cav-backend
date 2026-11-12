@@ -6,6 +6,7 @@ import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import mx.hotel.backend_cav.dto.UsuarioRequest;
 import mx.hotel.backend_cav.dto.UsuarioResponse;
@@ -24,11 +25,14 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditoriaService auditoriaService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, RolRepository rolRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, RolRepository rolRepository,
+            PasswordEncoder passwordEncoder, AuditoriaService auditoriaService) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional(readOnly = true)
@@ -42,7 +46,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioResponse crear(UsuarioRequest request) {
+    public UsuarioResponse crear(UsuarioRequest request, UserDetails userDetails) {
         String nombreUsuario = normalizarUsuario(request.usuario());
         if (request.contrasena() == null || request.contrasena().isBlank()) {
             throw new BadRequestException("La contraseña es obligatoria al crear un usuario");
@@ -55,11 +59,14 @@ public class UsuarioService {
         usuario.setContrasena(passwordEncoder.encode(request.contrasena()));
         usuario.setEstado(EstadoUsuario.ACTIVO);
         usuario.setRol(buscarRol(request.rol()));
-        return UsuarioResponse.from(usuarioRepository.save(usuario));
+        Usuario guardado = usuarioRepository.save(usuario);
+        auditoriaService.registrar(userDetails, "CREO_USUARIO",
+                "Creó usuario " + guardado.getUsuario(), null, null);
+        return UsuarioResponse.from(guardado);
     }
 
     @Transactional
-    public UsuarioResponse actualizar(Integer id, UsuarioRequest request) {
+    public UsuarioResponse actualizar(Integer id, UsuarioRequest request, UserDetails userDetails) {
         Usuario usuario = buscar(id);
         String nombreUsuario = normalizarUsuario(request.usuario());
         validarUsuarioDisponible(nombreUsuario, id);
@@ -70,24 +77,33 @@ public class UsuarioService {
         if (request.contrasena() != null && !request.contrasena().isBlank()) {
             usuario.setContrasena(passwordEncoder.encode(request.contrasena()));
         }
+        auditoriaService.registrar(userDetails, "MODIFICO_USUARIO",
+                "Modificó usuario " + usuario.getUsuario(), null, null);
         return UsuarioResponse.from(usuario);
     }
 
     @Transactional
-    public void desactivar(Integer id) {
+    public void desactivar(Integer id, UserDetails userDetails) {
         Usuario usuario = buscar(id);
         usuario.setEstado(EstadoUsuario.INACTIVO);
+        auditoriaService.registrar(userDetails, "DESACTIVO_USUARIO",
+                "Desactivó usuario " + usuario.getUsuario(), null, null);
     }
 
     @Transactional
-    public void activar(Integer id) {
+    public void activar(Integer id, UserDetails userDetails) {
         Usuario usuario = buscar(id);
         usuario.setEstado(EstadoUsuario.ACTIVO);
+        auditoriaService.registrar(userDetails, "ACTIVO_USUARIO",
+                "Activó usuario " + usuario.getUsuario(), null, null);
     }
 
     @Transactional
-    public void eliminar(Integer id) {
-        usuarioRepository.delete(buscar(id));
+    public void eliminar(Integer id, UserDetails userDetails) {
+        Usuario usuario = buscar(id);
+        auditoriaService.registrar(userDetails, "ELIMINO_USUARIO",
+                "Eliminó usuario " + usuario.getUsuario(), null, null);
+        usuarioRepository.delete(usuario);
     }
 
     private Usuario buscar(Integer id) {

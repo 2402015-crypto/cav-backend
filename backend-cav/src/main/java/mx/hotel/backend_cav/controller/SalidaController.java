@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.validation.Valid;
 import mx.hotel.backend_cav.dto.ApiResponse;
@@ -64,14 +66,16 @@ public class SalidaController {
     /** Registra la salida y actualiza las observaciones del vehículo. */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<SalidaLookupResponse>> registrar(
-            @PathVariable Integer id, @Valid @RequestBody SalidaRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Salida registrada", service.registrar(id, request)));
+            @PathVariable Integer id, @Valid @RequestBody SalidaRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.ok("Salida registrada", service.registrar(id, request, userDetails)));
     }
 
     /** Actualiza únicamente las observaciones sin registrar la salida. */
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/observaciones")
     public ResponseEntity<ApiResponse<SalidaLookupResponse>> actualizarObservaciones(
-            @PathVariable Integer id, @Valid @RequestBody SalidaRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Observaciones actualizadas", service.actualizarObservaciones(id, request)));
+            @PathVariable Integer id, @Valid @RequestBody SalidaRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.ok("Observaciones actualizadas", service.actualizarObservaciones(id, request, userDetails)));
     }
 }
