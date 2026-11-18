@@ -13,6 +13,8 @@ public interface OcrHistorialRepository extends JpaRepository<OcrHistorial, Inte
             select count(o) from OcrHistorial o
             where o.fecha >= :inicio and o.fecha < :fin
             and o.placaDetectada is not null and trim(o.placaDetectada) <> ''
+            and o.corregidaManual = false
+            and upper(coalesce(o.resultadoFinal, '')) <> 'NO_DETECTADA'
             """)
     long countDetectadas(@org.springframework.data.repository.query.Param("inicio") java.time.LocalDateTime inicio,
             @org.springframework.data.repository.query.Param("fin") java.time.LocalDateTime fin);

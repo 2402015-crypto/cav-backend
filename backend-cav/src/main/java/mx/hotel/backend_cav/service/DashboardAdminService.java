@@ -34,6 +34,7 @@ import mx.hotel.backend_cav.repository.UsuarioRepository;
 public class DashboardAdminService {
 
     private static final Locale LOCALE = Locale.forLanguageTag("es-MX");
+    private static final long ACCESOS_MINIMOS_PROVEEDOR = 2L;
 
     private final DashboardAdminRepository registroRepository;
     private final MetricasOcrRepository metricasRepository;
@@ -41,6 +42,7 @@ public class DashboardAdminService {
     private final EmpresaRepository empresaRepository;
     private final TransportadoraRepository transportadoraRepository;
     private final ApplicationTimeService timeService;
+    private final MetricasOcrService metricasOcrService;
 
     public DashboardAdminService(
             DashboardAdminRepository registroRepository,
@@ -48,26 +50,28 @@ public class DashboardAdminService {
             UsuarioRepository usuarioRepository,
             EmpresaRepository empresaRepository,
             TransportadoraRepository transportadoraRepository,
-            ApplicationTimeService timeService) {
+            ApplicationTimeService timeService,
+            MetricasOcrService metricasOcrService) {
         this.registroRepository = registroRepository;
         this.metricasRepository = metricasRepository;
         this.usuarioRepository = usuarioRepository;
         this.empresaRepository = empresaRepository;
         this.transportadoraRepository = transportadoraRepository;
         this.timeService = timeService;
+        this.metricasOcrService = metricasOcrService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public DashboardAdminResponse obtener(int dias) {
         int periodo = dias == 30 ? 30 : 7;
         LocalDate hoy = timeService.today();
         LocalDate inicioFecha = hoy.minusDays(periodo - 1L);
         LocalDateTime inicio = inicioFecha.atStartOfDay();
         LocalDateTime fin = hoy.plusDays(1).atStartOfDay();
+        inicioFecha.datesUntil(hoy.plusDays(1)).forEach(metricasOcrService::recalcular);
         List<RegistroAcceso> registros = registroRepository.findForDashboard(inicio, fin);
         List<mx.hotel.backend_cav.entity.MetricasOcr> metricas = metricasRepository
                 .findAllByFechaBetweenOrderByFechaAsc(inicioFecha, hoy);
-
         long entradasHoy = registros.stream().filter(r -> r.getFechaEntrada().toLocalDate().equals(hoy)).count();
         long salidasHoy = registros.stream()
                 .filter(r -> r.getFechaSalida() != null && r.getFechaSalida().toLocalDate().equals(hoy)).count();
@@ -86,8 +90,10 @@ public class DashboardAdminService {
                                         .setScale(1, RoundingMode.HALF_UP)),
                 agruparEntradas(registros, inicioFecha, periodo),
                 agruparOcr(metricas, inicioFecha, periodo),
-                ranking(registros, registro -> registro.getEmpresa(), true),
-                ranking(registros, registro -> registro.getTransportadora(), false));
+                ranking(registros, registro -> registro.getEmpresa(), true,
+                        Integer.MAX_VALUE),
+                ranking(registros, registro -> registro.getTransportadora(), false,
+                        Integer.MAX_VALUE));
     }
 
     private List<PuntoSerie> agruparEntradas(List<RegistroAcceso> registros, LocalDate inicio, int dias) {
@@ -114,15 +120,40 @@ public class DashboardAdminService {
                             valores.getOrDefault(fecha, BigDecimal.ZERO)))
                     .toList();
         }
-        Map<Integer, List<BigDecimal>> semanas = new LinkedHashMap<>();
-        inicio.datesUntil(inicio.plusDays(30)).forEach(fecha ->
-                semanas.computeIfAbsent((int) (java.time.temporal.ChronoUnit.DAYS.between(inicio, fecha) * 4 / 30) + 1,
-                        ignored -> new ArrayList<>()).add(valores.getOrDefault(fecha, BigDecimal.ZERO)));
+        Map<Integer, List<mx.hotel.backend_cav.entity.MetricasOcr>> semanas = new LinkedHashMap<>();
+        Map<LocalDate, mx.hotel.backend_cav.entity.MetricasOcr> metricasPorFecha = metricas.stream()
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toMap(
+                        metrica -> metrica.getFecha(),
+                        Function.identity(),
+                        (primera, segunda) -> segunda));
+        inicio.datesUntil(inicio.plusDays(30)).forEach(fecha -> {
+            int semana = (int) (java.time.temporal.ChronoUnit.DAYS.between(inicio, fecha) / 7) + 1;
+            mx.hotel.backend_cav.entity.MetricasOcr metrica = metricasPorFecha.get(fecha);
+            if (metrica != null && metrica.getImagenesProcesadas() > 0) {
+                semanas.computeIfAbsent(semana, ignored -> new ArrayList<>()).add(metrica);
+            } else {
+                semanas.putIfAbsent(semana, new ArrayList<>());
+            }
+        });
         return semanas.entrySet().stream()
                 .map(entry -> new PuntoSerie("Semana " + entry.getKey(),
-                        entry.getValue().stream().reduce(BigDecimal.ZERO, (total, valor) -> total.add(valor))
-                                .divide(BigDecimal.valueOf(entry.getValue().size()), 2, RoundingMode.HALF_UP)))
+                        promedioPrecisionSemana(entry.getValue())))
                 .toList();
+    }
+
+    private BigDecimal promedioPrecisionSemana(List<mx.hotel.backend_cav.entity.MetricasOcr> metricasSemana) {
+        BigDecimal total = BigDecimal.ZERO;
+        int diasConPrecision = 0;
+        for (mx.hotel.backend_cav.entity.MetricasOcr metrica : metricasSemana) {
+            BigDecimal precisionDia = metrica.getPrecisionOcr();
+            if (precisionDia != null) {
+                total = total.add(precisionDia);
+                diasConPrecision++;
+            }
+        }
+        return diasConPrecision == 0 ? BigDecimal.ZERO
+                : total.divide(BigDecimal.valueOf(diasConPrecision), 2, RoundingMode.HALF_UP);
     }
 
     private List<PuntoSerie> agruparSemanas(LocalDate inicio, Map<LocalDate, Long> valores) {
@@ -137,14 +168,15 @@ public class DashboardAdminService {
 
     private List<Ranking> ranking(List<RegistroAcceso> registros,
             Function<RegistroAcceso, Nombrable> extractor,
-            boolean minimum) {
+            boolean minimum, int maxResults) {
         Map<String, Long> valores = registros.stream().map(extractor)
                 .filter(value -> value != null)
                 .collect(Collectors.groupingBy(value -> value.getNombre(),
                         Collectors.counting()));
         return valores.entrySet().stream()
-                .filter(entry -> !minimum || entry.getValue() > 3)
+                .filter(entry -> !minimum || entry.getValue() >= ACCESOS_MINIMOS_PROVEEDOR)
                 .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+                .limit(maxResults)
                 .map(entry -> new Ranking(entry.getKey(), entry.getValue()))
                 .toList();
     }
