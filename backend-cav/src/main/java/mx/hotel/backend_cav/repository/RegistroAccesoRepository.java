@@ -22,6 +22,7 @@ public interface RegistroAccesoRepository extends JpaRepository<RegistroAcceso, 
 	java.util.List<RegistroAcceso> buscarActivos(@org.springframework.data.repository.query.Param("texto") String texto);
 
 	java.util.List<RegistroAcceso> findAllByVehiculo_IdOrderByFechaEntradaDesc(Integer vehiculoId);
+	long countByPlacaRegistradaIgnoreCase(String placaRegistrada);
 
 	@Query("""
 		select r from RegistroAcceso r

@@ -72,7 +72,9 @@ public class SalidaService {
                 registro.getEmpresa() == null ? null : registro.getEmpresa().getNombre(),
                 registro.getTransportadora() == null ? null : registro.getTransportadora().getNombre(),
                 registro.getFechaEntrada(), registro.getFechaSalida(), registro.getObservaciones(),
-                minutos, formatear(minutos));
+                minutos, formatear(minutos),
+                registro.getPlacaRegistrada() == null ? 0L
+                        : registroRepository.countByPlacaRegistradaIgnoreCase(registro.getPlacaRegistrada()));
     }
 
     private String normalizar(String value) {

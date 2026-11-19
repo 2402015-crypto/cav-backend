@@ -91,7 +91,7 @@ public class DashboardAdminService {
                 agruparEntradas(registros, inicioFecha, periodo),
                 agruparOcr(metricas, inicioFecha, periodo),
                 ranking(registros, registro -> registro.getEmpresa(), true,
-                        Integer.MAX_VALUE),
+                        periodo == 30 ? 5 : Integer.MAX_VALUE),
                 ranking(registros, registro -> registro.getTransportadora(), false,
                         Integer.MAX_VALUE));
     }

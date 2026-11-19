@@ -14,5 +14,6 @@ public record HistorialAccesoResponse(
         LocalDateTime fechaSalida,
         String observaciones,
         long permanenciaMinutos,
-        String permanencia) {
+        String permanencia,
+        long totalVisitas) {
 }
