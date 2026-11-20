@@ -76,6 +76,19 @@ public class DashboardAdminService {
         long salidasHoy = registros.stream()
                 .filter(r -> r.getFechaSalida() != null && r.getFechaSalida().toLocalDate().equals(hoy)).count();
         long activos = registroRepository.countByFechaSalidaIsNull();
+        LocalDate inicioEmpresas = hoy.minusDays(6);
+        LocalDateTime inicioEmpresasTiempo = inicioEmpresas.atStartOfDay();
+        List<RegistroAcceso> registrosEmpresas = registroRepository.findForDashboard(inicioEmpresasTiempo, fin);
+        long empresasUltimos7Dias = registrosEmpresas.stream()
+                .filter(registro -> registro.getEmpresa() != null || registro.getTransportadora() != null)
+                .map(registro -> registro.getEmpresa() != null
+                        ? registro.getEmpresa().getNombre()
+                        : registro.getTransportadora().getNombre())
+                .filter(nombre -> nombre != null && !nombre.isBlank())
+                .map(String::trim)
+                .map(nombre -> nombre.toLowerCase(Locale.ROOT))
+                .distinct()
+                .count();
         long usuariosActivos = usuarioRepository.countByEstado(EstadoUsuario.ACTIVO);
         long procesadas = metricas.stream().mapToLong(m -> m.getImagenesProcesadas()).sum();
         long detectadas = metricas.stream().mapToLong(m -> m.getDetectadas()).sum();
@@ -84,7 +97,7 @@ public class DashboardAdminService {
         return new DashboardAdminResponse(
                 hoy,
                 new Resumen(entradasHoy + salidasHoy, activos, entradasHoy, salidasHoy,
-                        empresaRepository.count() + transportadoraRepository.count(), precision,
+                        empresasUltimos7Dias, precision,
                         usuariosActivos == 0 ? BigDecimal.ZERO
                                 : BigDecimal.valueOf((entradasHoy + salidasHoy) / (double) usuariosActivos)
                                         .setScale(1, RoundingMode.HALF_UP)),

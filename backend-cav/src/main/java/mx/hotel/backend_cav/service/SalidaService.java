@@ -49,7 +49,9 @@ public class SalidaService {
         return new SalidaActivaResponse(registro.getId(), registro.getPlacaRegistrada(),
                    registro.getConductor() == null ? "N/A" : registro.getConductor().getNombre(),
                    relacionado(registro), registro.getTipoVisitante() == null ? "N/A" : registro.getTipoVisitante().getNombre(),
-                   registro.getFechaEntrada(), registro.getObservaciones(), minutos, formatear(minutos));
+                   registro.getFechaEntrada(), registro.getObservaciones(), minutos, formatear(minutos),
+                   registro.getPlacaRegistrada() == null ? 0L
+                           : registroRepository.countByPlacaRegistradaIgnoreCase(registro.getPlacaRegistrada()));
         }).toList();
         }
 
