@@ -42,11 +42,12 @@ Variables principales:
 
 ```dotenv
 SERVER_PORT=8080
-DB_URL=jdbc:mysql://localhost:3306/cav?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+SERVER_ADDRESS=0.0.0.0
+DB_URL=jdbc:mysql://localhost:3306/cav?serverTimezone=America/Cancun&useSSL=false&allowPublicKeyRetrieval=true
 DB_USERNAME=root
 DB_PASSWORD=
 FLYWAY_ENABLED=false
-CORS_ALLOWED_ORIGINS=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://172.18.130.80:5173,http://172.*:5173,http://192.168.1.24:5173,http://192.168.*:5173
 JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRATION_MINUTES=30
 OCR_BASE_URL=http://localhost:5000
