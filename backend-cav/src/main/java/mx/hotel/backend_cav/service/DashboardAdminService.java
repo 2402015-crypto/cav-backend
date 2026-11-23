@@ -25,9 +25,7 @@ import mx.hotel.backend_cav.entity.EstadoUsuario;
 import mx.hotel.backend_cav.entity.Nombrable;
 import mx.hotel.backend_cav.entity.RegistroAcceso;
 import mx.hotel.backend_cav.repository.DashboardAdminRepository;
-import mx.hotel.backend_cav.repository.EmpresaRepository;
 import mx.hotel.backend_cav.repository.MetricasOcrRepository;
-import mx.hotel.backend_cav.repository.TransportadoraRepository;
 import mx.hotel.backend_cav.repository.UsuarioRepository;
 
 @Service
@@ -39,8 +37,6 @@ public class DashboardAdminService {
     private final DashboardAdminRepository registroRepository;
     private final MetricasOcrRepository metricasRepository;
     private final UsuarioRepository usuarioRepository;
-    private final EmpresaRepository empresaRepository;
-    private final TransportadoraRepository transportadoraRepository;
     private final ApplicationTimeService timeService;
     private final MetricasOcrService metricasOcrService;
 
@@ -48,15 +44,11 @@ public class DashboardAdminService {
             DashboardAdminRepository registroRepository,
             MetricasOcrRepository metricasRepository,
             UsuarioRepository usuarioRepository,
-            EmpresaRepository empresaRepository,
-            TransportadoraRepository transportadoraRepository,
             ApplicationTimeService timeService,
             MetricasOcrService metricasOcrService) {
         this.registroRepository = registroRepository;
         this.metricasRepository = metricasRepository;
         this.usuarioRepository = usuarioRepository;
-        this.empresaRepository = empresaRepository;
-        this.transportadoraRepository = transportadoraRepository;
         this.timeService = timeService;
         this.metricasOcrService = metricasOcrService;
     }
@@ -85,7 +77,7 @@ public class DashboardAdminService {
                         ? registro.getEmpresa().getNombre()
                         : registro.getTransportadora().getNombre())
                 .filter(nombre -> nombre != null && !nombre.isBlank())
-                .map(String::trim)
+                .map(nombre -> nombre.trim())
                 .map(nombre -> nombre.toLowerCase(Locale.ROOT))
                 .distinct()
                 .count();

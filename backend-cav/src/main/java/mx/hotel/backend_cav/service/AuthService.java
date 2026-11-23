@@ -41,7 +41,12 @@ public class AuthService {
         }
 
         Usuario usuario = usuarioEncontrado.get();
-        boolean passwordValida = passwordEncoder.matches(request.contrasena(), usuario.getContrasena());
+        boolean passwordValida = false;
+        try {
+            passwordValida = passwordEncoder.matches(request.contrasena(), usuario.getContrasena());
+        } catch (IllegalArgumentException exception) {
+            LOGGER.warn("El usuario [{}] tiene un hash de contraseña inválido", nombreUsuario);
+        }
         if (usuario.getEstado() != EstadoUsuario.ACTIVO || !passwordValida) {
             LOGGER.warn("Intento de inicio de sesión rechazado para [{}]: estado={}, contraseñaValida={}",
                     nombreUsuario, usuario.getEstado(), passwordValida);

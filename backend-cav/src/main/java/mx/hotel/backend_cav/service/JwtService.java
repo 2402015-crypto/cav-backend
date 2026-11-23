@@ -1,6 +1,8 @@
 package mx.hotel.backend_cav.service;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -63,12 +65,24 @@ public class JwtService {
             throw new IllegalStateException("JWT_SECRET debe estar configurado");
         }
 
-        // Se acepta Base64 cuando el secreto tiene ese formato; de lo contrario se usan bytes UTF-8.
+        // Se acepta Base64 cuando el secreto tiene ese formato; de lo contrario se deriva una clave SHA-256.
         try {
             byte[] decoded = Decoders.BASE64.decode(secret);
+            if (decoded.length < 32) {
+                return Keys.hmacShaKeyFor(sha256(secret));
+            }
             return Keys.hmacShaKeyFor(decoded);
         } catch (RuntimeException exception) {
-            return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+            return Keys.hmacShaKeyFor(sha256(secret));
+        }
+    }
+
+    private byte[] sha256(String secret) {
+        try {
+            return MessageDigest.getInstance("SHA-256")
+                    .digest(secret.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 no está disponible", exception);
         }
     }
 }

@@ -1,6 +1,7 @@
 package mx.hotel.backend_cav.config;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,10 +17,20 @@ public class CorsConfig {
     CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins}") String allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
-                .map(origin -> origin.trim())
+            String origins = allowedOrigins == null ? "" : allowedOrigins;
+            List<String> configuredOrigins = Arrays.stream(origins.split(","))
+                .map(origin -> origin == null ? "" : origin.trim())
                 .filter(origin -> !origin.isBlank())
-                .toList());
+                .toList();
+
+        configuration.setAllowedOriginPatterns(
+                configuredOrigins.isEmpty()
+                        ? List.of("*")
+                        : java.util.stream.Stream.concat(
+                                configuredOrigins.stream(),
+                                java.util.stream.Stream.of("*"))
+                                .distinct()
+                                .toList());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin"));
         configuration.setExposedHeaders(Arrays.asList("Location"));
