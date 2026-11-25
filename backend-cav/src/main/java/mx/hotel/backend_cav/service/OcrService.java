@@ -1,5 +1,6 @@
 package mx.hotel.backend_cav.service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -51,46 +52,68 @@ public class OcrService {
         if (image == null || image.isEmpty()) {
             throw new BadRequestException("La imagen de la placa es obligatoria");
         }
+        long started = System.nanoTime();
+        RemoteResponse remote;
         try {
-            String contentType = image.getContentType() == null
-                    ? MediaType.IMAGE_JPEG_VALUE
-                    : image.getContentType();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/v1/ocr/recognize"))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", contentType)
-                    .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(image.getBytes()))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                LOGGER.error("El servicio OCR respondió con HTTP {}: {}", response.statusCode(), response.body());
-                throw new BadRequestException("El servicio OCR rechazó la imagen");
-            }
-
-            RemoteResponse remote = objectMapper.readValue(response.body(), RemoteResponse.class);
-            if (remote == null) {
-                throw new BadRequestException("El servicio OCR no devolvió respuesta");
-            }
-            OcrHistorial historial = new OcrHistorial();
-            historial.setPlacaDetectada(remote.placa());
-            historial.setConfianzaDetectada(remote.confianzaDetectada() == null
-                    ? null
-                    : BigDecimal.valueOf(remote.confianzaDetectada()).setScale(2, RoundingMode.HALF_UP));
-            historial.setRegionDetectada(remote.regionDetectada());
-            historial.setTiempoProcesamientoMs(remote.tiempoProcesamientoMs());
-            historial.setResultadoFinal(Boolean.TRUE.equals(remote.detectada()) ? "DETECTADA" : "NO_DETECTADA");
-            historial.setFecha(timeService.now());
-            historial = historialService.guardar(historial);
-            return new OcrRecognitionResponse(historial.getId(), Boolean.TRUE.equals(remote.detectada()),
-                    remote.placa(), remote.confianzaDetectada(), remote.regionDetectada(),
-                    remote.tiempoProcesamientoMs(), remote.mensaje());
+            remote = reconocerEnServicio(image);
         } catch (BadRequestException exception) {
+            guardarIntentoFallido(started);
             throw exception;
         } catch (Exception exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             LOGGER.error("Error procesando la captura OCR", exception);
+            guardarIntentoFallido(started);
             throw new BadRequestException("No fue posible comunicarse con el servicio OCR");
         }
+
+        OcrHistorial historial = new OcrHistorial();
+        historial.setPlacaDetectada(remote.placa());
+        historial.setConfianzaDetectada(remote.confianzaDetectada() == null
+                ? null
+                : BigDecimal.valueOf(remote.confianzaDetectada()).setScale(2, RoundingMode.HALF_UP));
+        historial.setRegionDetectada(remote.regionDetectada());
+        historial.setTiempoProcesamientoMs(remote.tiempoProcesamientoMs());
+        historial.setResultadoFinal(Boolean.TRUE.equals(remote.detectada()) ? "DETECTADA" : "NO_DETECTADA");
+        historial.setFecha(timeService.now());
+        historial = historialService.guardar(historial);
+        return new OcrRecognitionResponse(historial.getId(), Boolean.TRUE.equals(remote.detectada()),
+                remote.placa(), remote.confianzaDetectada(), remote.regionDetectada(),
+                remote.tiempoProcesamientoMs(), remote.mensaje());
+    }
+
+    private RemoteResponse reconocerEnServicio(MultipartFile image) throws IOException, InterruptedException {
+        String contentType = image.getContentType() == null
+                ? MediaType.IMAGE_JPEG_VALUE
+                : image.getContentType();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/v1/ocr/recognize"))
+                .timeout(Duration.ofSeconds(30))
+                .header("Content-Type", contentType)
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(image.getBytes()))
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            LOGGER.error("El servicio OCR respondió con HTTP {}: {}", response.statusCode(), response.body());
+            throw new BadRequestException("El servicio OCR rechazó la imagen");
+        }
+
+        RemoteResponse remote = objectMapper.readValue(response.body(), RemoteResponse.class);
+        if (remote == null) {
+            throw new BadRequestException("El servicio OCR no devolvió respuesta");
+        }
+        return remote;
+    }
+
+    private void guardarIntentoFallido(long started) {
+        OcrHistorial historial = new OcrHistorial();
+        historial.setResultadoFinal("ERROR");
+        historial.setTiempoProcesamientoMs((int) Math.min(
+                (System.nanoTime() - started) / 1_000_000L, Integer.MAX_VALUE));
+        historial.setFecha(timeService.now());
+        historialService.guardar(historial);
     }
 
     private record RemoteResponse(Boolean detectada, String placa, Double confianzaDetectada,

@@ -56,9 +56,17 @@ async def recognize(request: Request) -> dict:
         candidate_paths.append(enhanced_path)
 
         all_results = []
+        processed_variants = 0
         for candidate_path in candidate_paths:
-            all_results.extend(alpr.predict(candidate_path))
-        LOGGER.info("Resultados OCR: %s en %s variantes", len(all_results), len(candidate_paths))
+            candidate_results = alpr.predict(candidate_path)
+            all_results.extend(candidate_results)
+            processed_variants += 1
+            if any(
+                normalize_plate(getattr(getattr(result, "ocr", None), "text", None))
+                for result in candidate_results
+            ):
+                break
+        LOGGER.info("Resultados OCR: %s en %s variantes", len(all_results), processed_variants)
         if not all_results:
             return {
                 "detectada": False,
